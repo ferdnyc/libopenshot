@@ -84,7 +84,7 @@ matrix:
 
 script:
   - mkdir -p build; cd build;
-  - cmake -DCMAKE_INSTALL_PREFIX="${TRAVIS_OS_NAME}-${BUILD_VERSION}-x64" -DCMAKE_BUILD_TYPE:STRING="Debug" ../
+  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" ../
   - make VERBOSE=1
   - make os_test
-      - make install DESTDIR=dist/
+  - make install DESTDIR="$BUILD_VERSION"
