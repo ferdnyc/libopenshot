@@ -1,8 +1,4 @@
 language: cpp
-os:
-  - linux
-  - osx
-dist: xenial
 sudo: required
 
 addons:
@@ -31,8 +27,10 @@ addons:
 
 matrix:
   include:
-    - name: "FFmpeg 2"
+    - name: "FFmpeg 2 Linux"
       env: BUILD_VERSION=ffmpeg2
+      os: linux
+      dist: xenial
       addons:
         apt:
           sources:
@@ -41,8 +39,10 @@ matrix:
           packages:
           - *ff_common
 
-    - name: "FFmpeg 3"
+    - name: "FFmpeg 3 Linux"
       env: BUILD_VERSION=ffmpeg3
+      os: linux
+      dist: xenial
       addons:
         apt:
           sources:
@@ -61,8 +61,10 @@ matrix:
           - libavresample3
           - libswresample2
 
-    - name: "FFmpeg 4"
+    - name: "FFmpeg 4 Linux"
       env: BUILD_VERSION=ffmpeg4
+      os: linux
+      dist: xenial
       addons:
         apt:
           sources:
@@ -80,6 +82,14 @@ matrix:
           - libpostproc55
           - libavresample4
           - libswresample3
+
+    - name: "FFmpeg 4 MacOS"
+      env: BUILD_VERSION=ffmpeg4_MacOS
+      os: osx
+      before_install:
+        - |
+          brew install cmake python swig unittest-cpp qt zmqpp doxygen
+          brew install imagemagick ffmpeg@4
 
 script:
   - mkdir -p build; cd build;
