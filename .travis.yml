@@ -1,5 +1,4 @@
 language: cpp
-sudo: required
 
 addons:
   apt:
@@ -83,13 +82,12 @@ matrix:
           - libavresample4
           - libswresample3
 
-    - name: "FFmpeg 4 MacOS"
-      env: BUILD_VERSION=ffmpeg4_MacOS
-      os: osx
-      before_install:
-        - |
-          brew install cmake python swig unittest-cpp qt zmqpp doxygen
-          brew install imagemagick ffmpeg@4
+    # - name: "FFmpeg 4 MacOS"
+    #   env: BUILD_VERSION=ffmpeg4_MacOS
+    #   os: osx
+    #   install:
+    #     - brew install swig unittest-cpp qt zmqpp doxygen
+    #     - brew install imagemagick ffmpeg@4
 
 script:
   - mkdir -p build; cd build;
