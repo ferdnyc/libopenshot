@@ -6,20 +6,17 @@ sudo: required
 addons:
   apt:
     packages: &p_common
-    - gcc-4.8
     - cmake
-    - pkg-config
     - swig
     - libopenshot-audio-dev
-    - libfdk-aac-dev
     - libmagick++-dev
     - libunittest++-dev
     - libzmq3-dev
-    - python3-dev
     - qtbase5-dev
     - qtmultimedia5-dev
     packages: &ff_common
     - *p_common
+    - libfdk-aac-dev
     - libavcodec-dev
     - libavformat-dev
     - libavdevice-dev
