@@ -26,85 +26,83 @@ addons:
 
 matrix:
   include:
-    - name: "FFmpeg 2 Linux"
-      env: BUILD_VERSION=ffmpeg2
-      os: linux
-      dist: xenial
-      addons:
-        apt:
-          sources:
-          - sourceline: 'ppa:openshot.developers/libopenshot-daily'
-          - sourceline: 'ppa:beineri/opt-qt-5.10.0-xenial'
-          packages:
-          - *ff_common
+  - name: "FFmpeg 2 Linux"
+    env: BUILD_VERSION=ffmpeg2
+    os: linux
+    dist: xenial
+    addons:
+      apt:
+        sources:
+        - sourceline: 'ppa:openshot.developers/libopenshot-daily'
+        - sourceline: 'ppa:beineri/opt-qt-5.10.0-xenial'
+        packages:
+        - *ff_common
 
-    - name: "FFmpeg 3 Linux"
-      env: BUILD_VERSION=ffmpeg3
-      os: linux
-      dist: xenial
-      addons:
-        apt:
-          sources:
-          - sourceline: 'ppa:openshot.developers/libopenshot-daily'
-          - sourceline: 'ppa:beineri/opt-qt-5.10.0-xenial'
-          - sourceline: 'ppa:jonathonf/ffmpeg-3'
-          packages:
-          - *ff_common
-          - libavcodec57
-          - libavformat57
-          - libavdevice57
-          - libavutil55
-          - libavfilter6
-          - libswscale4
-          - libpostproc54
-          - libavresample3
-          - libswresample2
+  - name: "FFmpeg 3 Linux"
+    env: BUILD_VERSION=ffmpeg3
+    os: linux
+    dist: xenial
+    addons:
+      apt:
+        sources:
+        - sourceline: 'ppa:openshot.developers/libopenshot-daily'
+        - sourceline: 'ppa:beineri/opt-qt-5.10.0-xenial'
+        - sourceline: 'ppa:jonathonf/ffmpeg-3'
+        packages:
+        - *ff_common
+        - libavcodec57
+        - libavformat57
+        - libavdevice57
+        - libavutil55
+        - libavfilter6
+        - libswscale4
+        - libpostproc54
+        - libavresample3
+        - libswresample2
 
-    - name: "FFmpeg 4 Linux"
-      env: BUILD_VERSION=ffmpeg4
-      os: linux
-      dist: xenial
-      addons:
-        apt:
-          sources:
-          - sourceline: 'ppa:openshot.developers/libopenshot-daily'
-          - sourceline: 'ppa:beineri/opt-qt-5.10.0-xenial'
-          - sourceline: 'ppa:jonathonf/ffmpeg-4'
-          packages:
-          - *ff_common
-          - libavcodec58
-          - libavformat58
-          - libavdevice58
-          - libavutil56
-          - libavfilter7
-          - libswscale5
-          - libpostproc55
-          - libavresample4
-          - libswresample3
+  - name: "FFmpeg 4 Linux"
+    env: BUILD_VERSION=ffmpeg4
+    os: linux
+    dist: xenial
+    addons:
+      apt:
+        sources:
+        - sourceline: 'ppa:openshot.developers/libopenshot-daily'
+        - sourceline: 'ppa:beineri/opt-qt-5.10.0-xenial'
+        - sourceline: 'ppa:jonathonf/ffmpeg-4'
+        packages:
+        - *ff_common
+        - libavcodec58
+        - libavformat58
+        - libavdevice58
+        - libavutil56
+        - libavfilter7
+        - libswscale5
+        - libpostproc55
+        - libavresample4
+        - libswresample3
 
-    - name: "FFmpeg 4 MacOS"
-      env:
-      - BUILD_VERSION=ffmpeg4_MacOS
-      - EXTRA_CMAKE_ARGS="-DLIBOPENSHOT_AUDIO_DIR=$HOME/libopenshot-audio-osx/"
-      os: osx
-      before_install:
-      - |
-        brew install unittest-cpp
-        pushd $HOME
-        git clone https://github.com/OpenShot/libopenshot-audio
-        mkdir -p libopenshot-audio/build
-        cd libopenshot-audio/build
-        cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE:STRING="Debug" \
-          -DCMAKE_INSTALL_PREFIX:PATH=$HOME/libopenshot-audio-osx/ ..
-        make
-        make install
-        popd
-     install:
-       - brew install swig qt zmqpp doxygen
-       - brew install imagemagick ffmpeg@4
+  - name: "FFmpeg 4 MacOS"
+    env: |
+            BUILD_VERSION=ffmpeg4_MacOS
+            EXTRA_CMAKE_ARGS="-DLIBOPENSHOT_AUDIO_DIR=${HOME}/libopenshot-audio-osx/"
+    os: osx
+    before_install:
+    - brew install unittest-cpp
+    - pushd ${HOME}
+    - git clone https://github.com/OpenShot/libopenshot-audio
+    - mkdir -p libopenshot-audio/build
+    - cd libopenshot-audio/build
+    - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/libopenshot-audio-osx/ ..
+    - make
+    - make install
+    - popd
+    install:
+    - brew install swig qt zmqpp doxygen
+    - brew install imagemagick ffmpeg@4
 
 script:
-  - mkdir -p build; cd build;
+  - mkdir -p build; cd build
   - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" ${EXTRA_CMAKE_ARGS} ../
   - make VERBOSE=1
   - make os_test
