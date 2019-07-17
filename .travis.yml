@@ -87,19 +87,23 @@ matrix:
             BUILD_VERSION=ffmpeg4_MacOS
             EXTRA_CMAKE_ARGS="\-DLIBOPENSHOT_AUDIO_DIR=${HOME}/libopenshot-audio-osx/"
     os: osx
-    before_install:
-    - brew install unittest-cpp
-    - pushd ${HOME}
-    - git clone https://github.com/OpenShot/libopenshot-audio
-    - mkdir -p libopenshot-audio/build
-    - cd libopenshot-audio/build
-    - cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/libopenshot-audio-osx/ ..
-    - make
-    - make install
-    - popd
+    before_install: |
+      if [ ! -d "${HOME}/libopenshot-audio-osx" ]; then;
+        brew install unittest-cpp;
+        pushd ${HOME};
+        git clone https://github.com/OpenShot/libopenshot-audio;
+        mkdir -p libopenshot-audio/build;
+        cd libopenshot-audio/build;
+        cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/libopenshot-audio-osx/ ..;
+        make;
+        make install;
+        popd;
+      fi
     install:
-    - brew install swig qt zmqpp doxygen
+    - brew install swig unittest-cpp qt zmqpp doxygen
     - brew install imagemagick ffmpeg@4
+    cache:
+    - ${HOME}/libopenshot-audio-osx
 
 script:
   - mkdir -p build; cd build
