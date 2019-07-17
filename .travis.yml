@@ -85,7 +85,7 @@ matrix:
   - name: "FFmpeg 4 MacOS"
     env: |
             BUILD_VERSION=ffmpeg4_MacOS
-            EXTRA_CMAKE_ARGS="\-DLIBOPENSHOT_AUDIO_DIR=${HOME}/libopenshot-audio-osx/"
+            LIBOPENSHOT_AUDIO_DIR="${HOME}/libopenshot-audio-osx/"
     os: osx
     before_install: |
       if [ ! -d "${HOME}/libopenshot-audio-osx" ]; then
@@ -94,7 +94,7 @@ matrix:
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
         cd libopenshot-audio/build;
-        cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_INSTALL_PREFIX:PATH=${HOME}/libopenshot-audio-osx/ ..;
+        cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_INSTALL_PREFIX:PATH="${LIBOPENSHOT_AUDIO_DIR}" ..;
         make;
         make install;
         popd;
@@ -108,7 +108,7 @@ matrix:
 
 script:
   - mkdir -p build; cd build
-  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" -DQt5_DIR="$(brew --prefix qt)/lib/cmake/Qt5" ${EXTRA_CMAKE_ARGS} ../
+  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" -DQt5_DIR="$(brew --prefix qt)/lib/cmake/Qt5" ../
   - make VERBOSE=1
   - make os_test
   - make install DESTDIR="$BUILD_VERSION"
