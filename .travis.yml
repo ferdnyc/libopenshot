@@ -85,7 +85,7 @@ matrix:
   - name: "FFmpeg 4 MacOS"
     env: |
             BUILD_VERSION=ffmpeg4_MacOS
-            EXTRA_CMAKE_ARGS="-DLIBOPENSHOT_AUDIO_DIR=${HOME}/libopenshot-audio-osx/"
+            EXTRA_CMAKE_ARGS="\-DLIBOPENSHOT_AUDIO_DIR=${HOME}/libopenshot-audio-osx/"
     os: osx
     before_install:
     - brew install unittest-cpp
