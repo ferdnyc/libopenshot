@@ -104,6 +104,7 @@ matrix:
     - brew install imagemagick ffmpeg@4
     cache:
     - ${HOME}/libopenshot-audio-osx
+    - /usr/local/Cellar
 
 script:
   - mkdir -p build; cd build
