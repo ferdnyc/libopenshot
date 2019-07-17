@@ -88,7 +88,7 @@ matrix:
             EXTRA_CMAKE_ARGS="\-DLIBOPENSHOT_AUDIO_DIR=${HOME}/libopenshot-audio-osx/"
     os: osx
     before_install: |
-      if [ ! -d "${HOME}/libopenshot-audio-osx" ]; then;
+      if [ ! -d "${HOME}/libopenshot-audio-osx" ]; then
         brew install unittest-cpp;
         pushd ${HOME};
         git clone https://github.com/OpenShot/libopenshot-audio;
