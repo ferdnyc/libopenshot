@@ -88,6 +88,7 @@ matrix:
     before_install:
     - brew info
     - brew tap jmuncaster/homebrew-header-only # For cppzmq
+    - brew update
     - pushd ${HOME}
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
@@ -100,7 +101,8 @@ matrix:
         make install;
         popd;
       fi
-    - if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libresvg.dylib" ]; then
+    - |
+      if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libresvg.dylib" ]; then
         brew install --display-times qt rust;
         git clone https://github.com/RazrFalcon/resvg.git;
         pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd;
@@ -109,14 +111,17 @@ matrix:
         cp resvg/capi/include/*.h $LIBOPENSHOT_DEPS_DIR/include/resvg/;
         popd;
       fi
+    - popd
     install:
     - brew install --display-times cppzmq
     - brew install --display-times swig
     - brew install --display-times unittest-cpp
     - brew install --display-times imagemagick 
     - brew install --display-times ffmpeg
+    - brew install --display-times qt
     after_failure:
     - brew config
+    - brew doctor
     cache:
       directories:
       - $LIBOPENSHOT_DEPS_DIR
