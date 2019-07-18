@@ -88,7 +88,7 @@ matrix:
     before_install: 
     - pushd ${HOME}
     - |
-      if [ ! -d "$LIBOPENSHOT_DEPS_DIR" ]; then
+      if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
         brew install unittest-cpp;
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
@@ -98,24 +98,25 @@ matrix:
         make install;
         popd;
       fi
-    - brew install qt rust;
-    - git clone https://github.com/RazrFalcon/resvg.git;
-    - pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd
-    - mkdir -p $LIBOPENSHOT_DEPS_DIR/lib $LIBOPENSHOT_DEPS_DIR/include/resvg
-    - cp resvg/target/release/libresvg.* $LIBOPENSHOT_DEPS_DIR/lib/
-    - cp resvg/capi/include/*.h $LIBOPENSHOT_DEPS_DIR/include/resvg/
-    - popd
+    - if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libresvg.dylib" ]; then
+        brew install qt rust;
+        git clone https://github.com/RazrFalcon/resvg.git;
+        pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd;
+        mkdir -p $LIBOPENSHOT_DEPS_DIR/lib $LIBOPENSHOT_DEPS_DIR/include/resvg;
+        cp resvg/target/release/libresvg.* $LIBOPENSHOT_DEPS_DIR/lib/;
+        cp resvg/capi/include/*.h $LIBOPENSHOT_DEPS_DIR/include/resvg/;
+        popd;
+      fi
     install:
     - brew install swig unittest-cpp zmqpp
     - brew install imagemagick ffmpeg@4
     cache:
       directories:
-      - $HOME
-      - /usr/local/Cellar
+      - $LIBOPENSHOT_DEPS_DIR
 
 script:
   - mkdir -p build; cd build
-  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" ../
+  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_PREFIX_PATH:PATH="$(brew --prefix qt)" ..
   - make VERBOSE=1
   - make os_test
   - make install DESTDIR="$BUILD_VERSION"
