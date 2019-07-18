@@ -89,7 +89,7 @@ matrix:
     - pushd ${HOME}
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
-        brew install unittest-cpp;
+        brew install --devel unittest-cpp;
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
         pushd libopenshot-audio/build;
@@ -99,7 +99,7 @@ matrix:
         popd;
       fi
     - if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libresvg.dylib" ]; then
-        brew install qt rust;
+        brew install --devel qt rust;
         git clone https://github.com/RazrFalcon/resvg.git;
         pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd;
         mkdir -p $LIBOPENSHOT_DEPS_DIR/lib $LIBOPENSHOT_DEPS_DIR/include/resvg;
@@ -108,8 +108,8 @@ matrix:
         popd;
       fi
     install:
-    - brew install swig unittest-cpp zmqpp
-    - brew install imagemagick ffmpeg@4
+    - brew install --devel swig unittest-cpp zmqpp
+    - brew install --devel imagemagick ffmpeg@4
     cache:
       directories:
       - $LIBOPENSHOT_DEPS_DIR
