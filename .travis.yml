@@ -61,7 +61,10 @@ matrix:
         - libswresample2
 
   - name: "FFmpeg 4 Linux"
-    env: BUILD_VERSION=ffmpeg4
+    env: 
+    - |
+      BUILD_VERSION=ffmpeg4
+      XYZZY=Frobozz
     os: linux
     dist: xenial
     addons:
@@ -83,28 +86,36 @@ matrix:
         - libswresample3
 
   - name: "FFmpeg 4 MacOS"
-    env: |
-            BUILD_VERSION=ffmpeg4_MacOS
-            LIBOPENSHOT_AUDIO_DIR="${HOME}/libopenshot-audio-osx/"
+    env: 
+    - |
+      BUILD_VERSION=ffmpeg4_MacOS
+      LIBOPENSHOT_AUDIO_DIR=$HOME/libopenshot-audio-osx
+      QT_DIR=/usr/local/opt/qt
     os: osx
-    before_install: |
-      if [ ! -d "${HOME}/libopenshot-audio-osx" ]; then
+    before_install: 
+    - cd ${HOME}
+    - |
+      if [ ! -d "$LIBOPENSHOT_AUDIO_DIR" ]; then
         brew install unittest-cpp;
-        pushd ${HOME};
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
-        cd libopenshot-audio/build;
-        cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_INSTALL_PREFIX:PATH="${LIBOPENSHOT_AUDIO_DIR}" ..;
+        pushd libopenshot-audio/build;
+        cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_INSTALL_PREFIX:PATH="$LIBOPENSHOT_AUDIO_DIR" ..;
         make;
         make install;
         popd;
       fi
+    - brew install qt@5 rust;
+    - git clone https://github.com/RazrFalcon/resvg.git;
+    - pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd
+    - ls -R resvg/target/release
     install:
-    - brew install swig unittest-cpp qt zmqpp doxygen
+    - brew install swig unittest-cpp zmqpp
     - brew install imagemagick ffmpeg@4
     cache:
-    - ${HOME}/libopenshot-audio-osx
-    - /usr/local/Cellar
+      directories:
+      - $HOME
+      - /usr/local/Cellar
 
 script:
   - mkdir -p build; cd build
@@ -112,3 +123,4 @@ script:
   - make VERBOSE=1
   - make os_test
   - make install DESTDIR="$BUILD_VERSION"
+
