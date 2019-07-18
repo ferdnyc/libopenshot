@@ -61,10 +61,7 @@ matrix:
         - libswresample2
 
   - name: "FFmpeg 4 Linux"
-    env: 
-    - |
-      BUILD_VERSION=ffmpeg4
-      XYZZY=Frobozz
+    env: BUILD_VERSION=ffmpeg4
     os: linux
     dist: xenial
     addons:
@@ -86,11 +83,7 @@ matrix:
         - libswresample3
 
   - name: "FFmpeg 4 MacOS"
-    env: 
-    - |
-      BUILD_VERSION=ffmpeg4_MacOS
-      LIBOPENSHOT_AUDIO_DIR=$HOME/libopenshot-audio-osx
-      QT_DIR=/usr/local/opt/qt
+    env: BUILD_VERSION=ffmpeg4_MacOS LIBOPENSHOT_AUDIO_DIR=$HOME/libopenshot-audio-osx QT_DIR=/usr/local/opt/qt
     os: osx
     before_install: 
     - cd ${HOME}
@@ -105,7 +98,7 @@ matrix:
         make install;
         popd;
       fi
-    - brew install qt@5 rust;
+    - brew install qt rust;
     - git clone https://github.com/RazrFalcon/resvg.git;
     - pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd
     - ls -R resvg/target/release
