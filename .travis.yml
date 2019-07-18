@@ -85,11 +85,12 @@ matrix:
   - name: "FFmpeg 4 MacOS"
     env: BUILD_VERSION=ffmpeg4_MacOS LIBOPENSHOT_DEPS_DIR=$HOME/libopenshot-osx QT_DIR=/usr/local/opt/qt LIBOPENSHOT_AUDIO_DIR=$HOME/libopenshot-osx RESVGDIR=$HOME/libopenshot-osx
     os: osx
-    before_install: 
+    before_install:
+    - brew info
     - pushd ${HOME}
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
-        brew install --devel unittest-cpp;
+        brew install --devel --display-times unittest-cpp;
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
         pushd libopenshot-audio/build;
@@ -99,7 +100,7 @@ matrix:
         popd;
       fi
     - if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libresvg.dylib" ]; then
-        brew install --devel qt rust;
+        brew install --devel --display-times qt rust;
         git clone https://github.com/RazrFalcon/resvg.git;
         pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd;
         mkdir -p $LIBOPENSHOT_DEPS_DIR/lib $LIBOPENSHOT_DEPS_DIR/include/resvg;
@@ -108,8 +109,10 @@ matrix:
         popd;
       fi
     install:
-    - brew install --devel swig unittest-cpp zmqpp
-    - brew install --devel imagemagick ffmpeg@4
+    - brew install --devel --display-times swig unittest-cpp zmqpp
+    - brew install --devel --display-times imagemagick ffmpeg@4
+    after_failure:
+    - brew config
     cache:
       directories:
       - $LIBOPENSHOT_DEPS_DIR
