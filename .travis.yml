@@ -87,10 +87,11 @@ matrix:
     os: osx
     before_install:
     - brew info
+    - brew tap jmuncaster/homebrew-header-only # For cppzmq
     - pushd ${HOME}
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
-        brew install --devel --display-times unittest-cpp;
+        brew install --display-times unittest-cpp;
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
         pushd libopenshot-audio/build;
@@ -100,7 +101,7 @@ matrix:
         popd;
       fi
     - if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libresvg.dylib" ]; then
-        brew install --devel --display-times qt rust;
+        brew install --display-times qt rust;
         git clone https://github.com/RazrFalcon/resvg.git;
         pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd;
         mkdir -p $LIBOPENSHOT_DEPS_DIR/lib $LIBOPENSHOT_DEPS_DIR/include/resvg;
@@ -109,8 +110,11 @@ matrix:
         popd;
       fi
     install:
-    - brew install --devel --display-times swig unittest-cpp zmqpp
-    - brew install --devel --display-times imagemagick ffmpeg@4
+    - brew install --display-times cppzmq
+    - brew install --display-times swig
+    - brew install --display-times unittest-cpp
+    - brew install --display-times imagemagick 
+    - brew install --display-times ffmpeg
     after_failure:
     - brew config
     cache:
