@@ -92,6 +92,21 @@ ENDIF(WIN32)
 set(QT_HEADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/Qt)
 FILE(GLOB QT_HEADER_FILES "${QT_HEADER_DIR}/*.h")
 
+################# DEPENDENCIES ######################
+
+# OpenMP is required by FFmpegReader/Writer
+find_package(OpenMP REQUIRED)
+if(NOT TARGET OpenMP::OpenMP_CXX)
+    # Older CMake versions (< 3.9) don't create find targets.
+    add_library(OpenMP_TARGET INTERFACE)
+    add_library(OpenMP::OpenMP_CXX ALIAS OpenMP_TARGET)
+    target_compile_options(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
+    find_package(Threads REQUIRED)
+    target_link_libraries(OpenMP_TARGET INTERFACE Threads::Threads)
+    target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
+endif()
+
+
 ############## PROCESS SUB-DIRECTORIES ##############
 add_subdirectory(src)
 add_subdirectory(tests)
