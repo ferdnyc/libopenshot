@@ -126,7 +126,6 @@ matrix:
         mkdir -p $LIBOPENSHOT_DEPS_DIR/lib $LIBOPENSHOT_DEPS_DIR/include/resvg;
         cp resvg/target/release/libresvg.* $LIBOPENSHOT_DEPS_DIR/lib/;
         cp resvg/capi/include/*.h $LIBOPENSHOT_DEPS_DIR/include/resvg/;
-        popd;
       fi
     - popd
     after_failure:
