@@ -98,20 +98,41 @@ matrix:
         - qt
         - libomp
         - libvpx
+        - lzo
+        - glib
+        - sqlite
+        - python
+        - readline
+        - gdbm
+        - gettext
+        - fribidi
+        - lame
+        - gnutls
+        - unbound
+        - libevent
+        - p11-kit
+        - nettle
+        - frei0r
+        - fontconfig
+        - freetype
+        - libpng
+        - aombre
         - x264
         - x265
         - fdk-aac
         - fdk-aac-encoder
         - ffmpeg
-        - imagemagick
+        # - imagemagick
     before_install:
     - eval $(brew shellenv)
     - brew info
     - brew upgrade cmake
+    - brew install ffmpeg qt libomp cppzmq swig gcc
     install:
     - pushd ${HOME}
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
+        brew install gcc cmake swig unittest-cpp
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
         pushd libopenshot-audio/build;
@@ -122,6 +143,7 @@ matrix:
       fi
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libresvg.dylib" ]; then
+        brew install qt rust
         git clone https://github.com/RazrFalcon/resvg.git;
         pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd;
         mkdir -p $LIBOPENSHOT_DEPS_DIR/lib $LIBOPENSHOT_DEPS_DIR/include/resvg;
@@ -143,6 +165,7 @@ script:
       export EXTRA_CM_ARGS="-DCMAKE_PREFIX_PATH:PATH=\"$(brew --prefix qt)\" \
                             -DENABLE_RUBY:BOOL=0";
     fi
+  - echo cmake -DCMAKE_BUILD_TYPE:STRING="Debug" $EXTRA_CM_ARGS ..
   - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" $EXTRA_CM_ARGS ..
   - make VERBOSE=1
   - make os_test
