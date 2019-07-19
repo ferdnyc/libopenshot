@@ -105,8 +105,8 @@ matrix:
         - fdk-aac-encoder
         - ffmpeg
     before_install:
+    - eval $(brew shellenv)
     - brew info
-    - brew upgrade cmake
     install:
     - pushd ${HOME}
     - |
@@ -137,8 +137,12 @@ matrix:
 
 script:
   - mkdir -p build; cd build
-  - if [ $TRAVIS_OS_NAME = osx ]; then EXTRA_ARGS="-DCMAKE_PREFIX_PATH:PATH=\"$(brew --prefix qt)\""; fi
-  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" $EXTRA_ARGS ..
+  - |
+    if [ $TRAVIS_OS_NAME = osx ]; then
+      export EXTRA_CM_ARGS="-DCMAKE_PREFIX_PATH:PATH=\"$(brew --prefix qt)\" \
+                            -DENABLE_RUBY:BOOL=0";
+    fi
+  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" $EXTRA_CM_ARGS ..
   - make VERBOSE=1
   - make os_test
   - make install DESTDIR="$BUILD_VERSION"
