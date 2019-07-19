@@ -83,17 +83,34 @@ matrix:
         - libswresample3
 
   - name: "FFmpeg 4 MacOS"
-    env: BUILD_VERSION=ffmpeg4_MacOS LIBOPENSHOT_DEPS_DIR=$HOME/libopenshot-osx QT_DIR=/usr/local/opt/qt LIBOPENSHOT_AUDIO_DIR=$HOME/libopenshot-osx RESVGDIR=$HOME/libopenshot-osx
+    env: BUILD_VERSION=ffmpeg4_MacOS LIBOPENSHOT_DEPS_DIR=$HOME/libopenshot-osx QT_DIR=/usr/local/opt/qt LIBOPENSHOT_AUDIO_DIR=$HOME/libopenshot-osx RESVGDIR=$HOME/libopenshot-osx HOMEBREW_NO_INSTALL_CLEANUP=1
     os: osx
+    addons:
+      homebrew:
+        packages:
+        - gcc
+        - swig
+        - unittest-cpp
+        - rust
+        - qt
+        - libomp
+        - imagemagick
+        - libvpx
+        - x264
+        - x265
+        - fdk-aac
+        - fdk-aac-encoder
+        - ffmpeg
     before_install:
     - brew info
-    - brew tap jmuncaster/homebrew-header-only # For cppzmq
     - brew update
-    - brew install --display-times cmake gcc
+    - brew tap jmuncaster/homebrew-header-only # For cppzmq
+    - brew install cppzmq
+    - brew upgrade cmake
+    install:
     - pushd ${HOME}
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
-        brew install --display-times swig unittest-cpp;
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
         pushd libopenshot-audio/build;
@@ -104,7 +121,6 @@ matrix:
       fi
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libresvg.dylib" ]; then
-        brew install --display-times qt rust;
         git clone https://github.com/RazrFalcon/resvg.git;
         pushd resvg/capi && cargo build --verbose --release --features "qt-backend" && popd;
         mkdir -p $LIBOPENSHOT_DEPS_DIR/lib $LIBOPENSHOT_DEPS_DIR/include/resvg;
@@ -113,12 +129,6 @@ matrix:
         popd;
       fi
     - popd
-    install:
-    - brew install --display-times cppzmq unittest-cpp libomp
-    - brew install --display-times swig
-    - brew install --display-times qt
-    - brew install --display-times imagemagick
-    - brew install --display-times fdk-aac fdk-aac-encoder libvpx x264 ffmpeg
     after_failure:
     - brew config
     - brew doctor
@@ -128,7 +138,8 @@ matrix:
 
 script:
   - mkdir -p build; cd build
-  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_PREFIX_PATH:PATH="$(brew --prefix qt)" ..
+  - if [ $TRAVIS_OS_NAME = osx ]; then EXTRA_ARGS="-DCMAKE_PREFIX_PATH:PATH=\"$(brew --prefix qt)\""; fi
+  - cmake -DCMAKE_BUILD_TYPE:STRING="Debug" $EXTRA_ARGS ..
   - make VERBOSE=1
   - make os_test
   - make install DESTDIR="$BUILD_VERSION"
