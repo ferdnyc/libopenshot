@@ -87,10 +87,13 @@ matrix:
     os: osx
     addons:
       homebrew:
+        update: true
+        taps: jmuncaster/homebrew-header-only # For cppzmq
         packages:
         - gcc
         - swig
         - unittest-cpp
+        - cppzmq
         - rust
         - qt
         - libomp
@@ -103,9 +106,6 @@ matrix:
         - ffmpeg
     before_install:
     - brew info
-    - brew update
-    - brew tap jmuncaster/homebrew-header-only # For cppzmq
-    - brew install cppzmq
     - brew upgrade cmake
     install:
     - pushd ${HOME}
