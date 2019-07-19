@@ -89,6 +89,7 @@ matrix:
     - brew info
     - brew tap jmuncaster/homebrew-header-only # For cppzmq
     - brew update
+    - brew install --display-times cmake gcc
     - pushd ${HOME}
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
