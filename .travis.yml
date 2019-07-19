@@ -128,8 +128,8 @@ matrix:
     - brew info
     - brew upgrade cmake
     - brew install ffmpeg qt libomp cppzmq swig gcc
-    - export CC=$HOMEBREW_PREFIX/bin/gcc
-    - export CXX=$HOMEBREW_PREFIX/bin/g++
+    - export CC=$(brew --prefix gcc)/bin/gcc
+    - export CXX=$(brew --prefix gcc)/bin/g++
     - export CC_FOR_BUILD=$CC
     - export CXX_FOR_BUILD=$CXX
     install:
