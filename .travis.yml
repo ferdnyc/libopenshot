@@ -92,7 +92,7 @@ matrix:
     - pushd ${HOME}
     - |
       if [ ! -f "$LIBOPENSHOT_DEPS_DIR/lib/libopenshot-audio.dylib" ]; then
-        brew install --display-times unittest-cpp;
+        brew install --display-times swig unittest-cpp;
         git clone https://github.com/OpenShot/libopenshot-audio;
         mkdir -p libopenshot-audio/build;
         pushd libopenshot-audio/build;
@@ -113,12 +113,11 @@ matrix:
       fi
     - popd
     install:
-    - brew install --display-times cppzmq
+    - brew install --display-times cppzmq unittest-cpp libomp
     - brew install --display-times swig
-    - brew install --display-times unittest-cpp
-    - brew install --display-times imagemagick 
-    - brew install --display-times ffmpeg
     - brew install --display-times qt
+    - brew install --display-times imagemagick
+    - brew install --display-times fdk-aac fdk-aac-encoder libvpx x264 ffmpeg
     after_failure:
     - brew config
     - brew doctor
