@@ -97,16 +97,17 @@ matrix:
         - rust
         - qt
         - libomp
-        - imagemagick
         - libvpx
         - x264
         - x265
         - fdk-aac
         - fdk-aac-encoder
         - ffmpeg
+        - imagemagick
     before_install:
     - eval $(brew shellenv)
     - brew info
+    - brew upgrade cmake
     install:
     - pushd ${HOME}
     - |
