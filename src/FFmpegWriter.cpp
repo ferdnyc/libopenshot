@@ -350,7 +350,7 @@ void FFmpegWriter::SetOption(StreamType stream, string name, string value) {
 	// Was option found?
 	if (option || (name == "g" || name == "qmin" || name == "qmax" || name == "max_b_frames" || name == "mb_decision" ||
 				   name == "level" || name == "profile" || name == "slices" || name == "rc_min_rate" || name == "rc_max_rate" ||
-				   name == "crf")) {
+				   name == "crf" || name == "cqp")) {
 		// Check for specific named options
 		if (name == "g")
 			// Set gop_size
@@ -396,7 +396,57 @@ void FFmpegWriter::SetOption(StreamType stream, string name, string value) {
 			// Buffer size
 			convert >> c->rc_buffer_size;
 
-		else if (name == "crf") {
+		else if (name == "cqp") {
+			// encode quality and special settings like lossless
+			// This might be better in an extra methods as more options
+			// and way to set quality are possible
+		#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(55, 39, 101)
+			#if IS_FFMPEG_3_2
+				if (hw_en_on) {
+					av_opt_set_int(c->priv_data, "qp", min(stoi(value),63), 0); // 0-63
+				} else
+			#endif
+				{
+				switch (c->codec_id) {
+					#if (LIBAVCODEC_VERSION_MAJOR >= 58)
+					case AV_CODEC_ID_AV1 :
+						c->bit_rate = 0;
+						av_opt_set_int(c->priv_data, "qp", min(stoi(value),63), 0); // 0-63
+						break;
+					#endif
+					case AV_CODEC_ID_VP8 :
+						c->bit_rate = 10000000;
+						av_opt_set_int(c->priv_data, "qp", max(min(stoi(value), 63), 4), 0); // 4-63
+						break;
+					case AV_CODEC_ID_VP9 :
+						c->bit_rate = 0;        // Must be zero!
+						av_opt_set_int(c->priv_data, "qp", min(stoi(value), 63), 0); // 0-63
+						if (stoi(value) == 0) {
+							av_opt_set(c->priv_data, "preset", "veryslow", 0);
+							av_opt_set_int(c->priv_data, "lossless", 1, 0);
+						}
+						break;
+					case AV_CODEC_ID_H264 :
+						av_opt_set_int(c->priv_data, "qp", min(stoi(value), 51), 0); // 0-51
+						if (stoi(value) == 0) {
+							av_opt_set(c->priv_data, "preset", "veryslow", 0);
+						}
+						break;
+					case AV_CODEC_ID_H265 :
+						av_opt_set_int(c->priv_data, "qp", min(stoi(value), 51), 0); // 0-51
+						if (stoi(value) == 0) {
+							av_opt_set(c->priv_data, "preset", "veryslow", 0);
+							av_opt_set_int(c->priv_data, "lossless", 1, 0);
+						}
+						break;
+					default:
+						// For all other codecs assume a range of 0-63
+						av_opt_set_int(c->priv_data, "qp", min(stoi(value), 63), 0); // 0-63
+						c->bit_rate = 0;
+				}
+			}
+		#endif
+		} else if (name == "crf") {
 			// encode quality and special settings like lossless
 			// This might be better in an extra methods as more options
 			// and way to set quality are possible
