@@ -34,20 +34,20 @@ using namespace openshot;
 
 // Default Constructor for the timeline (which sets the canvas width and height)
 Timeline::Timeline(int width, int height, Fraction fps, int sample_rate, int channels, ChannelLayout channel_layout) :
-		is_open(false), auto_map_clips(true), managed_cache(true)
+    is_open(false), auto_map_clips(true), managed_cache(true)
 {
-	// Create CrashHandler and Attach (incase of errors)
-	CrashHandler::Instance();
+    // Create CrashHandler and Attach (incase of errors)
+    CrashHandler::Instance();
 
-	// Init viewport size (curve based, because it can be animated)
-	viewport_scale = Keyframe(100.0);
-	viewport_x = Keyframe(0.0);
-	viewport_y = Keyframe(0.0);
+    // Init viewport size (curve based, because it can be animated)
+    viewport_scale = Keyframe(100.0);
+    viewport_x = Keyframe(0.0);
+    viewport_y = Keyframe(0.0);
 
-	// Init background color
-	color.red = Keyframe(0.0);
-	color.green = Keyframe(0.0);
-	color.blue = Keyframe(0.0);
+    // Init background color
+    color.red = Keyframe(0.0);
+    color.green = Keyframe(0.0);
+    color.blue = Keyframe(0.0);
 
 	// Init FileInfo struct (clear all values)
 	info.width = width;
@@ -402,7 +402,7 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
 		for (int pixel = 0, byte_index=0; pixel < source_image->width() * source_image->height(); pixel++, byte_index+=4)
 		{
 			// Get the alpha values from the pixel
-			int A = pixels[byte_index + 3];
+			//int A = pixels[byte_index + 3];
 
 			// Apply alpha to pixel
 			pixels[byte_index + 3] *= alpha;
@@ -466,34 +466,36 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
     float crop_h = source_clip->crop_height.GetValue(clip_frame_number);
     switch(source_clip->crop_gravity)
     {
-      case (GRAVITY_TOP):
-          crop_x += 0.5;
-          break;
-      case (GRAVITY_TOP_RIGHT):
-          crop_x += 1.0;
-          break;
-      case (GRAVITY_LEFT):
-          crop_y += 0.5;
-          break;
-      case (GRAVITY_CENTER):
-          crop_x += 0.5;
-          crop_y += 0.5;
-          break;
-      case (GRAVITY_RIGHT):
-          crop_x += 1.0;
-          crop_y += 0.5;
-          break;
-      case (GRAVITY_BOTTOM_LEFT):
-          crop_y += 1.0;
-          break;
-      case (GRAVITY_BOTTOM):
-          crop_x += 0.5;
-          crop_y += 1.0;
-          break;
-      case (GRAVITY_BOTTOM_RIGHT):
-          crop_x += 1.0;
-          crop_y += 1.0;
-          break;
+    case (GRAVITY_TOP_LEFT):
+        break;
+    case (GRAVITY_TOP):
+        crop_x += 0.5;
+        break;
+    case (GRAVITY_TOP_RIGHT):
+        crop_x += 1.0;
+        break;
+    case (GRAVITY_LEFT):
+        crop_y += 0.5;
+        break;
+    case (GRAVITY_CENTER):
+        crop_x += 0.5;
+        crop_y += 0.5;
+        break;
+    case (GRAVITY_RIGHT):
+        crop_x += 1.0;
+        crop_y += 0.5;
+        break;
+    case (GRAVITY_BOTTOM_LEFT):
+        crop_y += 1.0;
+        break;
+    case (GRAVITY_BOTTOM):
+        crop_x += 0.5;
+        crop_y += 1.0;
+        break;
+    case (GRAVITY_BOTTOM_RIGHT):
+        crop_x += 1.0;
+        crop_y += 1.0;
+        break;
     }
 
 
@@ -507,37 +509,39 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
 	float scaled_source_width = source_size.width() * sx;
 	float scaled_source_height = source_size.height() * sy;
 
-	switch (source_clip->gravity)
-	{
-	case (GRAVITY_TOP):
-		x = (Settings::Instance()->MAX_WIDTH - scaled_source_width) / 2.0; // center
-		break;
-	case (GRAVITY_TOP_RIGHT):
-		x = Settings::Instance()->MAX_WIDTH - scaled_source_width; // right
-		break;
-	case (GRAVITY_LEFT):
-		y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height) / 2.0; // center
-		break;
-	case (GRAVITY_CENTER):
-		x = (Settings::Instance()->MAX_WIDTH - scaled_source_width) / 2.0; // center
-		y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height) / 2.0; // center
-		break;
-	case (GRAVITY_RIGHT):
-		x = Settings::Instance()->MAX_WIDTH - scaled_source_width; // right
-		y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height) / 2.0; // center
-		break;
-	case (GRAVITY_BOTTOM_LEFT):
-        y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height); // bottom
-		break;
-	case (GRAVITY_BOTTOM):
-		x = (Settings::Instance()->MAX_WIDTH - scaled_source_width) / 2.0; // center
-		y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height); // bottom
-		break;
-	case (GRAVITY_BOTTOM_RIGHT):
-		x = Settings::Instance()->MAX_WIDTH - scaled_source_width; // right
-		y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height); // bottom
-		break;
-	}
+    switch (source_clip->gravity)
+    {
+        case (GRAVITY_TOP_LEFT):
+            break;
+        case (GRAVITY_TOP):
+            x = (Settings::Instance()->MAX_WIDTH - scaled_source_width) / 2.0; // center
+            break;
+        case (GRAVITY_TOP_RIGHT):
+            x = Settings::Instance()->MAX_WIDTH - scaled_source_width; // right
+            break;
+        case (GRAVITY_LEFT):
+            y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height) / 2.0; // center
+            break;
+        case (GRAVITY_CENTER):
+            x = (Settings::Instance()->MAX_WIDTH - scaled_source_width) / 2.0; // center
+            y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height) / 2.0; // center
+            break;
+        case (GRAVITY_RIGHT):
+            x = Settings::Instance()->MAX_WIDTH - scaled_source_width; // right
+            y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height) / 2.0; // center
+            break;
+        case (GRAVITY_BOTTOM_LEFT):
+            y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height); // bottom
+            break;
+        case (GRAVITY_BOTTOM):
+            x = (Settings::Instance()->MAX_WIDTH - scaled_source_width) / 2.0; // center
+            y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height); // bottom
+            break;
+        case (GRAVITY_BOTTOM_RIGHT):
+            x = Settings::Instance()->MAX_WIDTH - scaled_source_width; // right
+            y = (Settings::Instance()->MAX_HEIGHT - scaled_source_height); // bottom
+            break;
+    }
 
 	// Debug output
 	ZmqLogger::Instance()->AppendDebugMethod("Timeline::add_layer (Gravity)", "source_frame->number", source_frame->number, "source_clip->gravity", source_clip->gravity, "info.width", info.width, "scaled_source_width", scaled_source_width, "info.height", info.height, "scaled_source_height", scaled_source_height);
@@ -607,26 +611,30 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
     painter.drawImage(0, 0, *source_image, crop_x * source_image->width(), crop_y * source_image->height(), crop_w * source_image->width(), crop_h * source_image->height());
 
     // Draw frame #'s on top of image (if needed)
-    if (source_clip->display != FRAME_DISPLAY_NONE) {
-        stringstream frame_number_str;
-        switch (source_clip->display)
-        {
-            case (FRAME_DISPLAY_CLIP):
-                frame_number_str << clip_frame_number;
-                break;
+    stringstream frame_number_str;
+    switch (source_clip->display)
+    {
+        case (FRAME_DISPLAY_NONE):
+            break;
 
-            case (FRAME_DISPLAY_TIMELINE):
-                frame_number_str << timeline_frame_number;
-                break;
+        case (FRAME_DISPLAY_CLIP):
+            frame_number_str << clip_frame_number;
+            break;
 
-            case (FRAME_DISPLAY_BOTH):
-                frame_number_str << timeline_frame_number << " (" << clip_frame_number << ")";
-                break;
-        }
+        case (FRAME_DISPLAY_TIMELINE):
+            frame_number_str << timeline_frame_number;
+            break;
 
+        case (FRAME_DISPLAY_BOTH):
+            frame_number_str << timeline_frame_number << " (" << clip_frame_number << ")";
+            break;
+    }
+
+    // Check whether the stream contains any characters
+    if (frame_number_str.tellp() > 0) {
         // Draw frame number on top of image
         painter.setPen(QColor("#ffffff"));
-        painter.drawText(20, 20, QString(frame_number_str.str().c_str()));
+        painter.drawText(20, 20, QString::fromStdString(frame_number_str.str()));
     }
 
     painter.end();
@@ -779,25 +787,26 @@ std::shared_ptr<Frame> Timeline::GetFrame(int64_t requested_frame)
 		// Determine all clip frames, and request them in order (to keep resampled audio in sequence)
 		for (int64_t frame_number = requested_frame; frame_number < requested_frame + minimum_frames; frame_number++)
 		{
-			// Loop through clips
-			for (int clip_index = 0; clip_index < nearby_clips.size(); clip_index++)
-			{
-				// Get clip object from the iterator
-				Clip *clip = nearby_clips[clip_index];
-                long clip_start_position = round(clip->Position() * info.fps.ToDouble()) + 1;
+            // Loop through clips
+            std::vector<Clip*>::iterator nearby_itr;
+            for (nearby_itr = nearby_clips.begin(); nearby_itr != nearby_clips.end(); ++nearby_itr)
+            {
+                // Get clip object from the iterator
+                Clip *clip = (*nearby_itr);
+                long clip_start_position = round(clip->Position() * 	info.fps.ToDouble()) + 1;
                 long clip_end_position = round((clip->Position() + clip->Duration()) * info.fps.ToDouble()) + 1;
 
-				bool does_clip_intersect = (clip_start_position <= frame_number && clip_end_position >= frame_number);
-				if (does_clip_intersect)
-				{
-					// Get clip frame #
+                bool does_clip_intersect = (clip_start_position <= frame_number && clip_end_position >= frame_number);
+                if (does_clip_intersect)
+                {
+                    // Get clip frame #
                     long clip_start_frame = (clip->Start() * info.fps.ToDouble()) + 1;
-					long clip_frame_number = frame_number - clip_start_position + clip_start_frame;
-					// Cache clip object
-					clip->GetFrame(clip_frame_number);
-				}
-			}
-		}
+                    long clip_frame_number = frame_number - clip_start_position + clip_start_frame;
+                    // Cache clip object
+                    clip->GetFrame(clip_frame_number);
+                }
+            }
+        }
 
 		#pragma omp parallel
 		{
@@ -831,39 +840,41 @@ std::shared_ptr<Frame> Timeline::GetFrame(int64_t requested_frame)
 				// Debug output
 				ZmqLogger::Instance()->AppendDebugMethod("Timeline::GetFrame (Loop through clips)", "frame_number", frame_number, "clips.size()", clips.size(), "nearby_clips.size()", nearby_clips.size());
 
-				// Find Clips near this time
-				for (int clip_index = 0; clip_index < nearby_clips.size(); clip_index++)
-				{
-					// Get clip object from the iterator
-					Clip *clip = nearby_clips[clip_index];
+                // Find Clips near this time
+                std::vector<Clip*>::iterator nearby_itr;
+                for (nearby_itr = nearby_clips.begin(); nearby_itr != nearby_clips.end(); ++nearby_itr)
+                {
+                    // Get clip object from the iterator
+                    Clip *clip = (*nearby_itr);
                     long clip_start_position = round(clip->Position() * info.fps.ToDouble()) + 1;
                     long clip_end_position = round((clip->Position() + clip->Duration()) * info.fps.ToDouble()) + 1;
 
                     bool does_clip_intersect = (clip_start_position <= frame_number && clip_end_position >= frame_number);
 
-					// Debug output
-					ZmqLogger::Instance()->AppendDebugMethod("Timeline::GetFrame (Does clip intersect)", "frame_number", frame_number, "clip->Position()", clip->Position(), "clip->Duration()", clip->Duration(), "does_clip_intersect", does_clip_intersect);
+                    // Debug output
+                    ZmqLogger::Instance()->AppendDebugMethod("Timeline::GetFrame (Does clip intersect)", "frame_number", frame_number, "clip->Position()", clip->Position(), "clip->Duration()", clip->Duration(), "does_clip_intersect", does_clip_intersect);
 
 					// Clip is visible
 					if (does_clip_intersect)
 					{
-						// Determine if clip is "top" clip on this layer (only happens when multiple clips are overlapping)
-						bool is_top_clip = true;
-						float max_volume = 0.0;
-						for (int top_clip_index = 0; top_clip_index < nearby_clips.size(); top_clip_index++)
-						{
-							Clip *nearby_clip = nearby_clips[top_clip_index];
+                        // Determine if clip is "top" clip on this layer (only happens when multiple clips are overlapping)
+                        bool is_top_clip = true;
+                        float max_volume = 0.0;
+                        std::vector<Clip*>::iterator top_clip_itr;
+                        for (top_clip_itr = nearby_clips.begin(); top_clip_itr != nearby_clips.end(); ++top_clip_itr)
+                        {
+                            Clip *nearby_clip = (*top_clip_itr);
                             long nearby_clip_start_position = round(nearby_clip->Position() * info.fps.ToDouble()) + 1;
                             long nearby_clip_end_position = round((nearby_clip->Position() + nearby_clip->Duration()) * info.fps.ToDouble()) + 1;
-							long nearby_clip_start_frame = (nearby_clip->Start() * info.fps.ToDouble()) + 1;
-							long nearby_clip_frame_number = frame_number - nearby_clip_start_position + nearby_clip_start_frame;
+                            long nearby_clip_start_frame = (nearby_clip->Start() * info.fps.ToDouble()) + 1;
+                            long nearby_clip_frame_number = frame_number - nearby_clip_start_position + nearby_clip_start_frame;
 
-							// Determine if top clip
-							if (clip->Id() != nearby_clip->Id() && clip->Layer() == nearby_clip->Layer() &&
+                            // Determine if top clip
+                            if (clip->Id() != nearby_clip->Id() && clip->Layer() == nearby_clip->Layer() &&
                                     nearby_clip_start_position <= frame_number && nearby_clip_end_position >= frame_number &&
                                     nearby_clip_start_position > clip_start_position && is_top_clip == true) {
-								is_top_clip = false;
-							}
+                                is_top_clip = false;
+                            }
 
 							// Determine max volume of overlapping clips
 							if (nearby_clip->Reader() && nearby_clip->Reader()->info.has_audio &&
@@ -1034,8 +1045,7 @@ void Timeline::SetJson(string value) {
 	Json::CharReader* reader(rbuilder.newCharReader());
 
 	string errors;
-	bool success = reader->parse( value.c_str(),
-                 value.c_str() + value.size(), &root, &errors );
+	bool success = reader->parse( value.c_str(), value.c_str() + value.size(), &root, &errors );
 	delete reader;
 
 	if (!success)
@@ -1068,10 +1078,10 @@ void Timeline::SetJsonValue(Json::Value root) {
 		// Clear existing clips
 		clips.clear();
 
-		// loop through clips
-		for (int x = 0; x < root["clips"].size(); x++) {
-			// Get each clip
-			Json::Value existing_clip = root["clips"][x];
+        // loop through clips
+        for (Json::Value::iterator x_iter = root["clips"].begin(); x_iter != root["clips"].end(); ++x_iter) {
+            // Get each clip
+            Json::Value existing_clip = (*x_iter);
 
 			// Create Clip
 			Clip *c = new Clip();
@@ -1088,17 +1098,17 @@ void Timeline::SetJsonValue(Json::Value root) {
 		// Clear existing effects
 		effects.clear();
 
-		// loop through effects
-		for (int x = 0; x < root["effects"].size(); x++) {
-			// Get each effect
-			Json::Value existing_effect = root["effects"][x];
+        // loop through effects
+        for (Json::Value::iterator x_iter = root["effects"].begin(); x_iter != root["effects"].end(); ++x_iter) {
+            // Get each effect
+            Json::Value existing_effect = (*x_iter);
 
 			// Create Effect
 			EffectBase *e = NULL;
 
 			if (!existing_effect["type"].isNull()) {
 				// Create instance of effect
-				if (e = EffectInfo().CreateEffect(existing_effect["type"].asString())) {
+				if ( (e = EffectInfo().CreateEffect(existing_effect["type"].asString())) ) {
 
 					// Load Json into Effect
 					e->SetJsonValue(existing_effect);
@@ -1133,8 +1143,7 @@ void Timeline::ApplyJsonDiff(string value) {
 	Json::CharReader* reader(rbuilder.newCharReader());
 
 	string errors;
-	bool success = reader->parse( value.c_str(),
-                 value.c_str() + value.size(), &root, &errors );
+	bool success = reader->parse( value.c_str(), value.c_str() + value.size(), &root, &errors );
 	delete reader;
 
 	if (!success || !root.isArray())
@@ -1144,9 +1153,9 @@ void Timeline::ApplyJsonDiff(string value) {
 	try
 	{
 		// Process the JSON change array, loop through each item
-		for (int x = 0; x < root.size(); x++) {
+		for (Json::Value::iterator x_iter = root.begin(); x_iter != root.end(); ++x_iter) {
 			// Get each change
-			Json::Value change = root[x];
+			Json::Value change = (*x_iter);
 			string root_key = change["key"][(uint)0].asString();
 
 			// Process each type of change
@@ -1180,9 +1189,9 @@ void Timeline::apply_json_to_clips(Json::Value change) {
 	Clip *existing_clip = NULL;
 
 	// Find id of clip (if any)
-	for (int x = 0; x < change["key"].size(); x++) {
+	for (Json::Value::iterator x_iter = change["key"].begin(); x_iter != change["key"].end(); ++x_iter) {
 		// Get each change
-		Json::Value key_part = change["key"][x];
+		Json::Value key_part = (*x_iter);
 
 		if (key_part.isObject()) {
 			// Check for id
@@ -1307,10 +1316,10 @@ void Timeline::apply_json_to_effects(Json::Value change) {
 	string change_type = change["type"].asString();
 	EffectBase *existing_effect = NULL;
 
-	// Find id of an effect (if any)
-	for (int x = 0; x < change["key"].size(); x++) {
-		// Get each change
-		Json::Value key_part = change["key"][x];
+    // Find id of an effect (if any)
+    for (Json::Value::iterator x_iter = change["key"].begin(); x_iter != change["key"].end(); ++x_iter) {
+        // Get each change
+        Json::Value key_part = (*x_iter);
 
 		if (key_part.isObject()) {
 			// Check for id
@@ -1364,7 +1373,7 @@ void Timeline::apply_json_to_effects(Json::Value change, EffectBase* existing_ef
 		EffectBase *e = NULL;
 
 		// Init the matching effect object
-		if (e = EffectInfo().CreateEffect(effect_type)) {
+		if ( (e = EffectInfo().CreateEffect(effect_type)) ) {
 
 			// Load Json into Effect
 			e->SetJsonValue(change["value"]);
