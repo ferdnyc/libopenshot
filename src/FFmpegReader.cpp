@@ -79,39 +79,22 @@ using namespace openshot;
 
 int hw_de_on = 0;
 #if IS_FFMPEG_3_2
-	AVPixelFormat hw_de_av_pix_fmt_global = AV_PIX_FMT_NONE;
-	AVHWDeviceType hw_de_av_device_type_global = AV_HWDEVICE_TYPE_NONE;
+    AVPixelFormat hw_de_av_pix_fmt_global = AV_PIX_FMT_NONE;
+    AVHWDeviceType hw_de_av_device_type_global = AV_HWDEVICE_TYPE_NONE;
 #endif
 
-FFmpegReader::FFmpegReader(string path)
-		: last_frame(0), is_seeking(0), seeking_pts(0), seeking_frame(0), seek_count(0),
-		  audio_pts_offset(99999), video_pts_offset(99999), path(path), is_video_seek(true), check_interlace(false),
-		  check_fps(false), enable_seek(true), is_open(false), seek_audio_frame_found(0), seek_video_frame_found(0),
-		  prev_samples(0), prev_pts(0), pts_total(0), pts_counter(0), is_duration_known(false), largest_frame_processed(0),
-		  current_video_frame(0), has_missing_frames(false), num_packets_since_video_frame(0), num_checks_since_final(0),
-		  packet(NULL) {
-
-	// Initialize FFMpeg, and register all formats and codecs
-	AV_REGISTER_ALL
-	AVCODEC_REGISTER_ALL
-
-	// Init cache
-	working_cache.SetMaxBytesFromInfo(OPEN_MP_NUM_PROCESSORS * info.fps.ToDouble() * 2, info.width, info.height, info.sample_rate, info.channels);
-	missing_frames.SetMaxBytesFromInfo(OPEN_MP_NUM_PROCESSORS * 2, info.width, info.height, info.sample_rate, info.channels);
-	final_cache.SetMaxBytesFromInfo(OPEN_MP_NUM_PROCESSORS * 2, info.width, info.height, info.sample_rate, info.channels);
-
-	// Open and Close the reader, to populate its attributes (such as height, width, etc...)
-	Open();
-	Close();
-}
+FFmpegReader::FFmpegReader(string path) :
+	FFmpegReader::FFmpegReader(path, true) { }
 
 FFmpegReader::FFmpegReader(string path, bool inspect_reader)
-		: last_frame(0), is_seeking(0), seeking_pts(0), seeking_frame(0), seek_count(0),
-		  audio_pts_offset(99999), video_pts_offset(99999), path(path), is_video_seek(true), check_interlace(false),
-		  check_fps(false), enable_seek(true), is_open(false), seek_audio_frame_found(0), seek_video_frame_found(0),
-		  prev_samples(0), prev_pts(0), pts_total(0), pts_counter(0), is_duration_known(false), largest_frame_processed(0),
-		  current_video_frame(0), has_missing_frames(false), num_packets_since_video_frame(0), num_checks_since_final(0),
-		  packet(NULL) {
+	: path(path), packet(NULL), is_open(false), is_duration_known(false),
+	check_interlace(false), check_fps(false), has_missing_frames(false),
+	prev_samples(0), prev_pts(0), pts_total(0), pts_counter(0),
+	num_packets_since_video_frame(0), num_checks_since_final(0),
+	is_seeking(0), seeking_pts(0), seeking_frame(0), is_video_seek(true), seek_count(0),
+	seek_audio_frame_found(0), seek_video_frame_found(0),
+	audio_pts_offset(99999), video_pts_offset(99999),
+	last_frame(0), largest_frame_processed(0), current_video_frame(0), enable_seek(true) {
 
 	// Initialize FFMpeg, and register all formats and codecs
 	AV_REGISTER_ALL
