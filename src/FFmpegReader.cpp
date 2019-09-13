@@ -1212,7 +1212,6 @@ void FFmpegReader::ProcessVideoPacket(int64_t requested_frame) {
 	ZmqLogger::Instance()->AppendDebugMethod("FFmpegReader::ProcessVideoPacket (Before)", "requested_frame", requested_frame, "current_frame", current_frame);
 
 	// Init some things local (for OpenMP)
-	PixelFormat pix_fmt = AV_GET_CODEC_PIXEL_FORMAT(pStream, pCodecCtx);
 	int height = info.height;
 	int width = info.width;
 	int64_t video_length = info.video_length;
@@ -1223,7 +1222,7 @@ void FFmpegReader::ProcessVideoPacket(int64_t requested_frame) {
 	const GenericScopedLock <CriticalSection> lock(processingCriticalSection);
 	processing_video_frames[current_frame] = current_frame;
 
-#pragma omp task firstprivate(current_frame, my_frame, height, width, video_length, pix_fmt)
+#pragma omp task firstprivate(current_frame, my_frame, height, width, video_length)
 	{
 		// Create variables for a RGB Frame (since most videos are not in RGB, we must convert it)
 		AVFrame *pFrameRGB = NULL;
@@ -1378,10 +1377,7 @@ void FFmpegReader::ProcessAudioPacket(int64_t requested_frame, int64_t target_fr
 	AV_RESET_FRAME(audio_frame);
 
 	int packet_samples = 0;
-	int data_size = 0;
 
-	// re-initialize buffer size (it gets changed in the avcodec_decode_audio2 method call)
-	int buf_size = AVCODEC_MAX_AUDIO_FRAME_SIZE + MY_INPUT_BUFFER_PADDING_SIZE;
 #pragma omp critical (ProcessAudioPacket)
 	{
 #if IS_FFMPEG_3_2
@@ -1419,9 +1415,8 @@ void FFmpegReader::ProcessAudioPacket(int64_t requested_frame, int64_t target_fr
 	if (frame_finished) {
 
 		// determine how many samples were decoded
-		int planar = av_sample_fmt_is_planar((AVSampleFormat) AV_GET_CODEC_PIXEL_FORMAT(aStream, aCodecCtx));
 		int plane_size = -1;
-		data_size = av_samples_get_buffer_size(&plane_size,
+		int data_size = av_samples_get_buffer_size(&plane_size,
 											   AV_GET_CODEC_ATTRIBUTES(aStream, aCodecCtx)->channels,
 											   audio_frame->nb_samples,
 											   (AVSampleFormat) (AV_GET_SAMPLE_FORMAT(aStream, aCodecCtx)), 1);
@@ -1496,7 +1491,6 @@ void FFmpegReader::ProcessAudioPacket(int64_t requested_frame, int64_t target_fr
 	av_samples_alloc(audio_converted->data, audio_converted->linesize, info.channels, audio_frame->nb_samples, AV_SAMPLE_FMT_S16, 0);
 
 	SWRCONTEXT *avr = NULL;
-	int nb_samples = 0;
 
 	// setup resample context
 	avr = SWR_ALLOC();
@@ -1511,13 +1505,14 @@ void FFmpegReader::ProcessAudioPacket(int64_t requested_frame, int64_t target_fr
 	int r = SWR_INIT(avr);
 
 	// Convert audio samples
-	nb_samples = SWR_CONVERT(avr,    // audio resample context
-							 audio_converted->data,          // output data pointers
-							 audio_converted->linesize[0],   // output plane size, in bytes. (0 if unknown)
-							 audio_converted->nb_samples,    // maximum number of samples that the output buffer can hold
-							 audio_frame->data,              // input data pointers
-							 audio_frame->linesize[0],       // input plane size, in bytes (0 if unknown)
-							 audio_frame->nb_samples);       // number of input samples to convert
+	int nb_samples = SWR_CONVERT(avr,    // audio resample context
+					 audio_converted->data,          // output data pointers
+					 audio_converted->linesize[0],   // output plane size, in bytes. (0 if unknown)
+					 audio_converted->nb_samples,    // maximum number of samples that the output buffer can hold
+					 audio_frame->data,              // input data pointers
+					 audio_frame->linesize[0],       // input plane size, in bytes (0 if unknown)
+					 audio_frame->nb_samples         // number of input samples to convert
+					 );
 
 	// Copy audio samples over original samples
 	memcpy(audio_buf, audio_converted->data[0], audio_converted->nb_samples * av_get_bytes_per_sample(AV_SAMPLE_FMT_S16) * info.channels);
