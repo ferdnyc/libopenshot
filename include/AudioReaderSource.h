@@ -57,16 +57,17 @@ namespace openshot
 	class AudioReaderSource : public PositionableAudioSource
 	{
 	private:
+		ReaderBase *reader; /// The reader to pull samples from
+
+		AudioSampleBuffer *buffer; /// The audio sample buffer
+		int size; /// The size of the internal buffer
 		int position; /// The position of the audio source (index of buffer)
 		bool repeat; /// Repeat the audio source when finished
-		int size; /// The size of the internal buffer
-		AudioSampleBuffer *buffer; /// The audio sample buffer
 		int speed; /// The speed and direction to playback a reader (1=normal, 2=fast, 3=faster, -1=rewind, etc...)
 
-		ReaderBase *reader; /// The reader to pull samples from
+		std::shared_ptr<Frame> frame; /// The current frame object that is being read
 		int64_t original_frame_number; /// The current frame to read from
 		int64_t frame_number; /// The current frame number
-		std::shared_ptr<Frame> frame; /// The current frame object that is being read
 		int64_t frame_position; /// The position of the current frame's buffer
 		double estimated_frame; /// The estimated frame position of the currently playing buffer
 		int estimated_samples_per_frame; /// The estimated samples per frame of video
