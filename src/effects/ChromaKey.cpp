@@ -85,7 +85,7 @@ std::shared_ptr<Frame> ChromaKey::GetFrame(std::shared_ptr<Frame> frame, int64_t
 		unsigned char R = pixels[byte_index];
 		unsigned char G = pixels[byte_index + 1];
 		unsigned char B = pixels[byte_index + 2];
-		unsigned char A = pixels[byte_index + 3];
+		//unsigned char A = pixels[byte_index + 3];
 
 		// Get distance between mask color and pixel color
 		long distance = Color::GetDistance((long)R, (long)G, (long)B, mask_R, mask_G, mask_B);

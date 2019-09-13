@@ -84,10 +84,11 @@ std::shared_ptr<Frame> Wave::GetFrame(std::shared_ptr<Frame> frame, int64_t fram
 	double speed_y_value = speed_y.GetValue(frame_number);
 
 	// Loop through pixels
-	for (int pixel = 0, byte_index=0; pixel < frame_image->width() * frame_image->height(); pixel++, byte_index+=4)
+	uint64_t pixel_len = frame_image->width() * frame_image->height();
+	for (uint64_t pixel = 0, byte_index=0; pixel < pixel_len; pixel++, byte_index+=4)
 	{
 		// Calculate X and Y pixel coordinates
-		int Y = pixel / frame_image->width();
+		uint64_t Y = pixel / frame_image->width();
 
 		// Calculate wave pixel offsets
 		float noiseVal = (100 + Y * 0.001) * multiplier_value; // Time and time multiplier (to make the wave move)
@@ -95,11 +96,11 @@ std::shared_ptr<Frame> Wave::GetFrame(std::shared_ptr<Frame> frame, int64_t fram
 		float waveformVal = sin((Y * wavelength_value) + (time * speed_y_value)); // Waveform algorithm on y-axis
 		float waveVal = (waveformVal + shift_x_value) * noiseAmp; // Shifts pixels on the x-axis
 
-		int source_X = round(pixel + waveVal) * 4;
+		uint64_t source_X = round(pixel + waveVal) * 4;
 		if (source_X < 0)
 			source_X = 0;
-		if (source_X > frame_image->width() * frame_image->height() * 4 * sizeof(char))
-			source_X = (frame_image->width() * frame_image->height() * 4 * sizeof(char)) - (sizeof(char) * 4);
+		if (source_X > pixel_len * 4 * sizeof(char))
+			source_X = (pixel_len * 4 * sizeof(char)) - (sizeof(char) * 4);
 
 		// Calculate source array location, and target array location, and copy the 4 color values
 		memcpy(&pixels[byte_index], &temp_image[source_X], sizeof(char) * 4);

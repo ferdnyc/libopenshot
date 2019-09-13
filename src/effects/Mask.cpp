@@ -33,14 +33,14 @@
 using namespace openshot;
 
 /// Blank constructor, useful when using Json to load the effect properties
-Mask::Mask() : reader(NULL), replace_image(false), needs_refresh(true) {
+Mask::Mask() : reader(NULL), needs_refresh(true), replace_image(false) {
 	// Init effect properties
 	init_effect_details();
 }
 
 // Default constructor
 Mask::Mask(ReaderBase *mask_reader, Keyframe mask_brightness, Keyframe mask_contrast) :
-		reader(mask_reader), brightness(mask_brightness), contrast(mask_contrast), replace_image(false), needs_refresh(true)
+		reader(mask_reader), needs_refresh(true), replace_image(false), brightness(mask_brightness), contrast(mask_contrast)
 {
 	// Init effect properties
 	init_effect_details();
