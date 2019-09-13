@@ -70,7 +70,7 @@ void CacheDisk::InitPath(string cache_path) {
 
 	if (!cache_path.empty()) {
 		// Init QDir with cache directory
-		qpath = QString(cache_path.c_str());
+		qpath = QString::fromStdString(cache_path);
 
 	} else {
 		// Init QDir with user's temp directory
@@ -238,7 +238,11 @@ std::shared_ptr<Frame> CacheDisk::GetFrame(int64_t frame_number)
 
 			// Load image file
 			std::shared_ptr<QImage> image = std::shared_ptr<QImage>(new QImage());
-			bool success = image->load(QString::fromStdString(frame_path.toStdString()));
+			bool success = image->load(frame_path);
+
+			if (!success) {
+				// TODO: Handle failure
+			}
 
 			// Set pixel formatimage->
 			image = std::shared_ptr<QImage>(new QImage(image->convertToFormat(QImage::Format_RGBA8888)));
