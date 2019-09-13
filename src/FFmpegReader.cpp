@@ -49,17 +49,17 @@
 #include "libavutil/hwcontext_vaapi.h"
 
 typedef struct VAAPIDecodeContext {
-	 VAProfile             va_profile;
-	 VAEntrypoint          va_entrypoint;
-	 VAConfigID            va_config;
-	 VAContextID           va_context;
+    VAProfile             va_profile;
+    VAEntrypoint          va_entrypoint;
+    VAConfigID            va_config;
+    VAContextID           va_context;
 
 #if FF_API_STRUCT_VAAPI_CONTEXT
-	 // FF_DISABLE_DEPRECATION_WARNINGS
-		 int                   have_old_context;
-		 struct vaapi_context *old_context;
-		 AVBufferRef          *device_ref;
-	 // FF_ENABLE_DEPRECATION_WARNINGS
+    // FF_DISABLE_DEPRECATION_WARNINGS
+    int                   have_old_context;
+    struct vaapi_context  *old_context;
+    AVBufferRef           *device_ref;
+    // FF_ENABLE_DEPRECATION_WARNINGS
 #endif
 
 	 AVHWDeviceContext    *device;
@@ -71,8 +71,8 @@ typedef struct VAAPIDecodeContext {
 	 enum AVPixelFormat    surface_format;
 	 int                   surface_count;
  } VAAPIDecodeContext;
-#endif
-#endif
+#endif // ENABLE_VAAPI
+#endif // IS_FFMPEG_3_2
 
 
 using namespace openshot;
@@ -190,6 +190,9 @@ static enum AVPixelFormat get_hw_dec_format(AVCodecContext *ctx, const enum AVPi
 				hw_de_av_device_type_global = AV_HWDEVICE_TYPE_QSV;
 				return *p;
 				break;
+
+			default:
+				break;
 		}
 	}
 	ZmqLogger::Instance()->AppendDebugMethod("FFmpegReader::get_hw_dec_format (Unable to decode this file using hardware decode)");
@@ -214,7 +217,7 @@ int FFmpegReader::IsHardwareDecodeSupported(int codecid)
 	}
 	return ret;
 }
-#endif
+#endif // IS_FFMPEG_3_2
 
 void FFmpegReader::Open() {
 	// Open reader if not already open
@@ -354,7 +357,7 @@ void FFmpegReader::Open() {
 								hw_de_av_device_type = AV_HWDEVICE_TYPE_VIDEOTOOLBOX;
 								break;
 						}
-#endif
+#endif // defined(__limux__ or _WIN32 or __APPLE__)
 
 					} else {
 						adapter_ptr = NULL; // Just to be sure
@@ -413,7 +416,7 @@ void FFmpegReader::Open() {
 						  throw InvalidCodec("Hardware device create failed.", path);
 					}
 				}
-#endif
+#endif // IS_FFMPEG_3_2
 
 				// Open video codec
 				if (avcodec_open2(pCodecCtx, pCodec, &opts) < 0)
