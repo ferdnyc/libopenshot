@@ -1,11 +1,12 @@
 language: cpp
-os: linux
-dist: xenial
-sudo: required
 
+# This section uses a rather esoteric (and tricky!) feature of YAML,
+# &aliases and *anchors, to build package lists out of sublists without
+# repeating their contents. Basically, '&name' creates an alias for the
+# given data, which can then be referenced using the anchor '*name'.
 addons:
   apt:
-    packages: &p_common
+    packages: &p_common  # Packages common to all Ubuntu builds
     - cmake
     - swig
     - libopenshot-audio-dev
@@ -14,7 +15,9 @@ addons:
     - libzmq3-dev
     - qtbase5-dev
     - qtmultimedia5-dev
-    packages: &ff_common
+    - doxygen
+    - graphviz
+    packages: &ff_common  # Common set of FFmpeg packages
     - *p_common
     - libfdk-aac-dev
     - libavcodec-dev
@@ -29,8 +32,10 @@ addons:
 
 matrix:
   include:
-    - name: "FFmpeg 2"
+    - name: "FFmpeg 2 (Ubuntu 16.04 Xenial)"
       env: BUILD_VERSION=ffmpeg2
+      os: linux
+      dist: xenial
       addons:
         apt:
           sources:
@@ -39,36 +44,32 @@ matrix:
           packages:
           - *ff_common
 
-    - name: "FFmpeg 3"
+    - name: "FFmpeg 3 (Ubuntu 18.04 Bionic)"
       env: BUILD_VERSION=ffmpeg3
+      os: linux
+      dist: bionic
       addons:
         apt:
           sources:
           - sourceline: 'ppa:openshot.developers/libopenshot-daily'
-          - sourceline: 'ppa:beineri/opt-qt-5.10.0-xenial'
-          - sourceline: 'ppa:jonathonf/ffmpeg-3'
+          - sourceline: 'ppa:beineri/opt-qt-5.12.3-bionic'
           packages:
           - *ff_common
-          - libavcodec57
-          - libavformat57
-          - libavdevice57
-          - libavutil55
-          - libavfilter6
-          - libswscale4
-          - libpostproc54
-          - libavresample3
-          - libswresample2
+          - qt5-default
 
-    - name: "FFmpeg 4"
+    - name: "FFmpeg 4 (Ubuntu 18.04 Bionic)"
       env: BUILD_VERSION=ffmpeg4
+      os: linux
+      dist: bionic
       addons:
         apt:
           sources:
           - sourceline: 'ppa:openshot.developers/libopenshot-daily'
-          - sourceline: 'ppa:beineri/opt-qt-5.10.0-xenial'
+          - sourceline: 'ppa:beineri/opt-qt-5.12.3-bionic'
           - sourceline: 'ppa:jonathonf/ffmpeg-4'
           packages:
           - *ff_common
+          - qt5-default
           - libavcodec58
           - libavformat58
           - libavdevice58
