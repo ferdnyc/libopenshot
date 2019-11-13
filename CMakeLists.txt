@@ -115,6 +115,6 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html/
 endif()
 
 ############# PROCESS tests/ DIRECTORY ##############
-if(NOT DISABLE_TESTS)
+if(NOT DISABLE_TESTS AND UnitTest++_FOUND)
   add_subdirectory(tests)
 endif()
