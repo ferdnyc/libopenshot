@@ -34,7 +34,7 @@
 %feature("compactdefaultargs", "1");
 
 /* Enable inline documentation */
-%feature("autodoc", "1");
+%feature("autodoc", "3");
 
 /* Include various SWIG helpers */
 %include "typemaps.i"
