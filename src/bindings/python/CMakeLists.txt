@@ -54,13 +54,14 @@ if (PYTHONLIBS_FOUND AND PYTHONINTERP_FOUND)
 -Wno-unused-parameter -Wno-catch-value -Wno-sign-compare -Wno-ignored-qualifiers")
 	separate_arguments(sw_flags UNIX_COMMAND ${SWIG_CXX_FLAGS})
 	set_property(SOURCE openshot.i PROPERTY GENERATED_COMPILE_OPTIONS ${sw_flags})
+  #set_property(SOURCE openshot.i PROPERTY COMPILE_OPTIONS "-doxygen" "-debug-doxygen-parser")
 
   ### Take include dirs from target, automatically if possible
   if (CMAKE_VERSION VERSION_GREATER 3.13)
     set_property(SOURCE openshot.i PROPERTY USE_TARGET_INCLUDE_DIRECTORIES True)
-  else ()
-    set_property(SOURCE openshot.i PROPERTY INCLUDE_DIRECTORIES $<TARGET_PROPERTY:openshot,INCLUDE_DIRECTORIES>)
-  endif ()
+  else()
+    set_property(SOURCE openshot.i PROPERTY SWIG_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:openshot,INCLUDE_DIRECTORIES>)
+  endif()
 
 	### Add the SWIG interface file (which defines all the SWIG methods)
 	if (CMAKE_VERSION VERSION_LESS 3.8.0)
@@ -70,8 +71,13 @@ if (PYTHONLIBS_FOUND AND PYTHONINTERP_FOUND)
 	endif()
 
 	### Set output name of target
-	set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
-	                      PREFIX "_" OUTPUT_NAME "openshot")
+	#set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
+	#                      PREFIX "_" OUTPUT_NAME "openshot")
+
+  # if(CMAKE_VERSION VERSION_GREATER 3.13.0)
+  #   set_property(TARGET ${SWIG_MODULE_pyopenshot_REAL_NAME} APPEND PROPERTY
+  #     SWIG_GENERATED_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:openshot,INCLUDE_DIRECTORIES>)
+  # endif()
 
 	### Link the new python wrapper library with libopenshot
 	target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME}

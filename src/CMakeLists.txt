@@ -25,7 +25,7 @@
 ################################################################################
 
 # Pick up our include directories from the parent context
-include_directories(${OPENSHOT_INCLUDE_DIRS})
+#include_directories(${OPENSHOT_INCLUDE_DIRS})
 
 ####### Display summary of options/dependencies ######
 include(FeatureSummary)
