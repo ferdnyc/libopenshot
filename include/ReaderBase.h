@@ -98,14 +98,14 @@ namespace openshot
 	{
 	protected:
 		/// Section lock for multiple threads
-	  juce::CriticalSection getFrameCriticalSection;
-	  juce::CriticalSection processingCriticalSection;
+		juce::CriticalSection getFrameCriticalSection;
+		juce::CriticalSection processingCriticalSection;
 		openshot::ClipBase* parent;
 
 	public:
 
 		/// Constructor for the base reader, where many things are initialized.
-	    ReaderBase();
+		ReaderBase();
 
 		/// Information about the current media file
 		openshot::ReaderInfo info;
