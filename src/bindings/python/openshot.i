@@ -56,6 +56,7 @@
 #endif
 %shared_ptr(juce::AudioSampleBuffer)
 %shared_ptr(openshot::Frame)
+%shared_ptr(QImage)
 
 %{
 #include "OpenShotVersion.h"

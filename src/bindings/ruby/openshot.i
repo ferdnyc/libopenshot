@@ -59,6 +59,7 @@ namespace std {
 #endif
 %template(SPtrAudioBuffer) std::shared_ptr<juce::AudioSampleBuffer>;
 %template(SPtrOpenFrame) std::shared_ptr<openshot::Frame>;
+%template(SPtrQImage) std::shared_ptr<QImage>;
 
 %{
 /* Ruby and FFmpeg define competing RSHIFT macros,
