@@ -91,7 +91,7 @@ namespace openshot
 		openshot::FFmpegWriter *writer_thumb;
 		openshot::FFmpegWriter *writer_preview;
 		openshot::FFmpegWriter *writer_final;
-	    std::shared_ptr<Frame> last_frame;
+	    std::shared_ptr<openshot::Frame> last_frame;
 	    bool last_frame_needed;
 	    std::string default_extension;
 	    std::string default_vcodec;
