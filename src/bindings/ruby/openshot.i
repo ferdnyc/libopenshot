@@ -37,11 +37,11 @@
 %feature("autodoc", "1");
 
 /* Include various SWIG helpers */
-%include "typemaps.i"
-%include "std_string.i"
-%include "std_list.i"
-%include "std_vector.i"
-%include "std_map.i"
+%include <typemaps.i>
+%include <std_string.i>
+%include <std_list.i>
+%include <std_map.i>
+%include <std_vector.i>
 
 /* Unhandled STL Exception Handling */
 %include <std_except.i>
@@ -230,3 +230,7 @@ namespace std {
 %template(MappedFrameVector) std::vector<openshot::MappedFrame>;
 %template(MappedMetadata) std::map<std::string, std::string>;
 %template(AudioDeviceInfoVector) std::vector<openshot::AudioDeviceInfo>;
+#ifdef USE_IMAGEMAGICK
+	%template(MagickDrawableVector) std::vector<Magick::Drawable>;
+	%template(MagickDrawableList) std::list<Magick::Drawable>;
+#endif
