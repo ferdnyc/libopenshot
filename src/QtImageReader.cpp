@@ -105,7 +105,7 @@ void QtImageReader::Open()
 		}
 
 		// Convert to proper format
-		image = std::shared_ptr<QImage>(new QImage(image->convertToFormat(QImage::Format_RGBA8888)));
+		image = std::shared_ptr<QImage>(new QImage(image->convertToFormat(QImage::Format_ARGB32_Premultiplied)));
 
 		// Update image properties
 		info.has_audio = false;
@@ -251,7 +251,7 @@ std::shared_ptr<Frame> QtImageReader::GetFrame(int64_t requested_frame)
 			cached_image = std::shared_ptr<QImage>(new QImage(image->scaled(max_width, max_height, Qt::KeepAspectRatio, Qt::SmoothTransformation)));
 		}
 
-		cached_image = std::shared_ptr<QImage>(new QImage(cached_image->convertToFormat(QImage::Format_RGBA8888)));
+		cached_image = std::shared_ptr<QImage>(new QImage(cached_image->convertToFormat(QImage::Format_ARGB32_Premultiplied)));
 
 		// Set max size (to later determine if max_size is changed)
 		max_size.setWidth(max_width);

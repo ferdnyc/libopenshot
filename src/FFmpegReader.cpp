@@ -1355,7 +1355,7 @@ void FFmpegReader::ProcessVideoPacket(int64_t requested_frame) {
 		std::shared_ptr<Frame> f = CreateFrame(current_frame);
 
 		// Add Image data to frame
-		f->AddImage(width, height, 4, QImage::Format_RGBA8888, buffer);
+		f->AddImage(width, height, 4, QImage::Format_ARGB32_Premultiplied, buffer);
 
 		// Update working cache
 		working_cache.Add(f);

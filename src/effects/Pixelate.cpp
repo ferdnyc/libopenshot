@@ -79,7 +79,7 @@ std::shared_ptr<Frame> Pixelate::GetFrame(std::shared_ptr<Frame> frame, int64_t 
 		std::shared_ptr<QImage> smaller_frame_image = std::shared_ptr<QImage>(new QImage(frame_image->scaledToWidth(std::max(frame_image->width() * pixelization_value, 2.0), Qt::SmoothTransformation)));
 
 		// Resize image back to original size (with no smoothing to create pixelated image)
-		std::shared_ptr<QImage> pixelated_image = std::shared_ptr<QImage>(new QImage(smaller_frame_image->scaledToWidth(frame_image->width(), Qt::FastTransformation).convertToFormat(QImage::Format_RGBA8888)));
+		std::shared_ptr<QImage> pixelated_image = std::shared_ptr<QImage>(new QImage(smaller_frame_image->scaledToWidth(frame_image->width(), Qt::FastTransformation).convertToFormat(QImage::Format_ARGB32_Premultiplied)));
 
 		// Get pixel array pointer
 		unsigned char *pixels = (unsigned char *) frame_image->bits();

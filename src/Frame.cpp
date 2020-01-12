@@ -228,7 +228,7 @@ std::shared_ptr<QImage> Frame::GetWaveform(int width, int height, int Red, int G
 		}
 
 		// Create blank image
-		wave_image = std::shared_ptr<QImage>(new QImage(total_width, total_height, QImage::Format_RGBA8888));
+		wave_image = std::shared_ptr<QImage>(new QImage(total_width, total_height, QImage::Format_ARGB32_Premultiplied));
 		wave_image->fill(QColor(0,0,0,0));
 
 		// Load QPainter with wave_image device
@@ -259,7 +259,7 @@ std::shared_ptr<QImage> Frame::GetWaveform(int width, int height, int Red, int G
 	else
 	{
 		// No audio samples present
-		wave_image = std::shared_ptr<QImage>(new QImage(width, height, QImage::Format_RGBA8888));
+		wave_image = std::shared_ptr<QImage>(new QImage(width, height, QImage::Format_ARGB32_Premultiplied));
 		wave_image->fill(QColor(QString::fromStdString("#000000")));
 	}
 
@@ -610,7 +610,7 @@ void Frame::Thumbnail(std::string path, int new_width, int new_height, std::stri
 		std::string background_color, bool ignore_aspect, std::string format, int quality, float rotate) {
 
 	// Create blank thumbnail image & fill background color
-	std::shared_ptr<QImage> thumbnail = std::shared_ptr<QImage>(new QImage(new_width, new_height, QImage::Format_RGBA8888));
+	std::shared_ptr<QImage> thumbnail = std::shared_ptr<QImage>(new QImage(new_width, new_height, QImage::Format_ARGB32_Premultiplied));
 	thumbnail->fill(QColor(QString::fromStdString(background_color)));
 
 	// Create painter
@@ -665,7 +665,7 @@ void Frame::Thumbnail(std::string path, int new_width, int new_height, std::stri
 		overlay->load(QString::fromStdString(overlay_path));
 
 		// Set pixel format
-		overlay = std::shared_ptr<QImage>(new QImage(overlay->convertToFormat(QImage::Format_RGBA8888)));
+		overlay = std::shared_ptr<QImage>(new QImage(overlay->convertToFormat(QImage::Format_ARGB32_Premultiplied)));
 
 		// Resize to fit
 		overlay = std::shared_ptr<QImage>(new QImage(overlay->scaled(new_width, new_height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)));
@@ -683,7 +683,7 @@ void Frame::Thumbnail(std::string path, int new_width, int new_height, std::stri
 		mask->load(QString::fromStdString(mask_path));
 
 		// Set pixel format
-		mask = std::shared_ptr<QImage>(new QImage(mask->convertToFormat(QImage::Format_RGBA8888)));
+		mask = std::shared_ptr<QImage>(new QImage(mask->convertToFormat(QImage::Format_ARGB32_Premultiplied)));
 
 		// Resize to fit
 		mask = std::shared_ptr<QImage>(new QImage(mask->scaled(new_width, new_height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)));
@@ -739,7 +739,7 @@ void Frame::AddColor(int new_width, int new_height, std::string new_color)
 	const GenericScopedLock<juce::CriticalSection> lock(addingImageSection);
 	#pragma omp critical (AddImage)
 	{
-		image = std::shared_ptr<QImage>(new QImage(new_width, new_height, QImage::Format_RGBA8888));
+		image = std::shared_ptr<QImage>(new QImage(new_width, new_height, QImage::Format_ARGB32_Premultiplied));
 
 		// Fill with solid color
 		image->fill(QColor(QString::fromStdString(color)));
@@ -767,8 +767,8 @@ void Frame::AddImage(int new_width, int new_height, int bytes_per_pixel, QImage:
 		image = std::shared_ptr<QImage>(new QImage(qbuffer, new_width, new_height, new_width * bytes_per_pixel, type, (QImageCleanupFunction) &openshot::Frame::cleanUpBuffer, (void*) qbuffer));
 
 		// Always convert to RGBA8888 (if different)
-		if (image->format() != QImage::Format_RGBA8888)
-			*image  = image->convertToFormat(QImage::Format_RGBA8888);
+		if (image->format() != QImage::Format_ARGB32_Premultiplied)
+			*image  = image->convertToFormat(QImage::Format_ARGB32_Premultiplied);
 
 			// Update height and width
 		width = image->width();
@@ -791,8 +791,8 @@ void Frame::AddImage(std::shared_ptr<QImage> new_image)
 		image = new_image;
 
 		// Always convert to RGBA8888 (if different)
-		if (image->format() != QImage::Format_RGBA8888)
-			*image = image->convertToFormat(QImage::Format_RGBA8888);
+		if (image->format() != QImage::Format_ARGB32_Premultiplied)
+			*image = image->convertToFormat(QImage::Format_ARGB32_Premultiplied);
 
 		// Update height and width
 		width = image->width();
@@ -955,7 +955,7 @@ void Frame::AddMagickImage(std::shared_ptr<Magick::Image> new_image)
 	MagickCore::ExportImagePixels(new_image->constImage(), 0, 0, new_image->columns(), new_image->rows(), "RGBA", Magick::CharPixel, buffer, &exception);
 
 	// Create QImage of frame data
-	image = std::shared_ptr<QImage>(new QImage(qbuffer, width, height, width * BPP, QImage::Format_RGBA8888, (QImageCleanupFunction) &cleanUpBuffer, (void*) qbuffer));
+	image = std::shared_ptr<QImage>(new QImage(qbuffer, width, height, width * BPP, QImage::Format_ARGB32_Premultiplied, (QImageCleanupFunction) &cleanUpBuffer, (void*) qbuffer));
 
 	// Update height and width
 	width = image->width();
