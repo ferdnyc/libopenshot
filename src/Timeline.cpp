@@ -384,28 +384,6 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
 	// Get actual frame image data
 	source_image = source_frame->GetImage();
 
-	/* ALPHA & OPACITY */
-	if (source_clip->alpha.GetValue(clip_frame_number) != 1.0)
-	{
-		float alpha = source_clip->alpha.GetValue(clip_frame_number);
-
-		// Get source image's pixels
-		unsigned char *pixels = (unsigned char *) source_image->bits();
-
-		// Loop through pixels
-		for (int pixel = 0, byte_index=0; pixel < source_image->width() * source_image->height(); pixel++, byte_index+=4)
-		{
-			// Get the alpha values from the pixel
-			int A = pixels[byte_index + 3];
-
-			// Apply alpha to pixel
-			pixels[byte_index + 3] *= alpha;
-		}
-
-		// Debug output
-		ZmqLogger::Instance()->AppendDebugMethod("Timeline::add_layer (Set Alpha & Opacity)", "alpha", alpha, "source_frame->number", source_frame->number, "clip_frame_number", clip_frame_number);
-	}
-
 	/* RESIZE SOURCE IMAGE - based on scale type */
 	QSize source_size = source_image->size();
 	switch (source_clip->scale)
@@ -549,7 +527,6 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
 	float shear_x = source_clip->shear_x.GetValue(clip_frame_number);
 	float shear_y = source_clip->shear_y.GetValue(clip_frame_number);
 
-	bool transformed = false;
 	QTransform transform;
 
 	// Transform source image (if needed)
@@ -562,13 +539,11 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
 		transform.translate(origin_x, origin_y);
 		transform.rotate(r);
 		transform.translate(-origin_x,-origin_y);
-		transformed = true;
 	}
 
     if (!isEqual(x, 0) || !isEqual(y, 0)) {
         // TRANSLATE/MOVE CLIP
         transform.translate(x, y);
-        transformed = true;
     }
 
 	// SCALE CLIP (if needed)
@@ -577,17 +552,15 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
 
 	if (!isEqual(source_width_scale, 1.0) || !isEqual(source_height_scale, 1.0)) {
 		transform.scale(source_width_scale, source_height_scale);
-		transformed = true;
 	}
 
     if (!isEqual(shear_x, 0) || !isEqual(shear_y, 0)) {
         // SHEAR HEIGHT/WIDTH
         transform.shear(shear_x, shear_y);
-        transformed = true;
     }
 
 	// Debug output
-	ZmqLogger::Instance()->AppendDebugMethod("Timeline::add_layer (Transform: Composite Image Layer: Prepare)", "source_frame->number", source_frame->number, "new_frame->GetImage()->width()", new_frame->GetImage()->width(), "transformed", transformed);
+	ZmqLogger::Instance()->AppendDebugMethod("Timeline::add_layer (Transform: Composite Image Layer: Prepare)", "source_frame->number", source_frame->number, "new_frame->GetImage()->width()", new_frame->GetImage()->width(), "transform.isIdentity", int(transform.isIdentity()));
 
 	/* COMPOSITE SOURCE IMAGE (LAYER) ONTO FINAL IMAGE */
 	std::shared_ptr<QImage> new_image;
@@ -599,12 +572,21 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
 	painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::TextAntialiasing, true);
 
 	// Apply transform (translate, rotate, scale)... if any
-	if (transformed)
+	if (!transform.isIdentity())
 		painter.setTransform(transform);
 
-	// Composite a new layer onto the image
+    // Composite a new layer onto the image with the configured transparency
+    float alpha = source_clip->alpha.GetValue(clip_frame_number);
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    painter.setOpacity(alpha);
+
+    // Log alpha value applied to composition
+    ZmqLogger::Instance()->AppendDebugMethod("Timeline::add_layer (Apply Alpha)", "alpha", alpha, "source_frame->number", source_frame->number, "clip_frame_number", clip_frame_number);
+
     painter.drawImage(0, 0, *source_image, crop_x * source_image->width(), crop_y * source_image->height(), crop_w * source_image->width(), crop_h * source_image->height());
+
+    // Reset output alpha level
+    painter.setOpacity(1);
 
     // Draw frame #'s on top of image (if needed)
     if (source_clip->display != FRAME_DISPLAY_NONE) {
@@ -634,9 +616,6 @@ void Timeline::add_layer(std::shared_ptr<Frame> new_frame, Clip* source_clip, in
     }
 
     painter.end();
-
-	// Debug output
-	ZmqLogger::Instance()->AppendDebugMethod("Timeline::add_layer (Transform: Composite Image Layer: Completed)", "source_frame->number", source_frame->number, "new_frame->GetImage()->width()", new_frame->GetImage()->width(), "transformed", transformed);
 }
 
 // Update the list of 'opened' clips
