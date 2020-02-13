@@ -33,15 +33,14 @@
 
 #include "../EffectBase.h"
 
-#include <cmath>
-#include <stdio.h>
 #include <memory>
 #include "../Json.h"
-#include "../KeyFrame.h"
 
 
 namespace openshot
 {
+	class Frame;
+	class Keyframe;
 
 	/**
 	 * @brief This class shifts the pixels of an image up, down, left, or right, and can be animated

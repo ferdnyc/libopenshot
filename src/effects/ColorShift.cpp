@@ -30,6 +30,11 @@
 
 #include "../../include/effects/ColorShift.h"
 
+#include "../../include/Frame.h"
+#include "../../include/KeyFrame.h"
+
+#include <cmath>
+
 using namespace openshot;
 
 /// Blank constructor, useful when using Json to load the effect properties
@@ -66,128 +71,55 @@ std::shared_ptr<Frame> ColorShift::GetFrame(std::shared_ptr<Frame> frame, int64_
 {
 	// Get the frame's image
 	std::shared_ptr<QImage> frame_image = frame->GetImage();
-	unsigned char *pixels = (unsigned char *) frame_image->bits();
+	const unsigned char *pixels = frame_image->constBits();
 
 	// Get image size
-	int frame_image_width = frame_image->width();
-	int frame_image_height = frame_image->height();
+	int w = frame_image->width();
+	int h = frame_image->height();
 
-	// Get the current shift amount, and clamp to range (-1 to 1 range)
-	// Red Keyframes
-	float red_x_shift = red_x.GetValue(frame_number);
-	int red_x_shift_limit = round(frame_image_width * fmod(abs(red_x_shift), 1.0));
-	float red_y_shift = red_y.GetValue(frame_number);
-	int red_y_shift_limit = round(frame_image_height * fmod(abs(red_y_shift), 1.0));
-	// Green Keyframes
-	float green_x_shift = green_x.GetValue(frame_number);
-	int green_x_shift_limit = round(frame_image_width * fmod(abs(green_x_shift), 1.0));
-	float green_y_shift = green_y.GetValue(frame_number);
-	int green_y_shift_limit = round(frame_image_height * fmod(abs(green_y_shift), 1.0));
-	// Blue Keyframes
-	float blue_x_shift = blue_x.GetValue(frame_number);
-	int blue_x_shift_limit = round(frame_image_width * fmod(abs(blue_x_shift), 1.0));
-	float blue_y_shift = blue_y.GetValue(frame_number);
-	int blue_y_shift_limit = round(frame_image_height * fmod(abs(blue_y_shift), 1.0));
-	// Alpha Keyframes
-	float alpha_x_shift = alpha_x.GetValue(frame_number);
-	int alpha_x_shift_limit = round(frame_image_width * fmod(abs(alpha_x_shift), 1.0));
-	float alpha_y_shift = alpha_y.GetValue(frame_number);
-	int alpha_y_shift_limit = round(frame_image_height * fmod(abs(alpha_y_shift), 1.0));
+	// Get the current shift amounts, and convert to pixel offsets
+	// stored in an array [Rx, Ry, Gx, Gy, Bx, By, Ax, Ay]
+	const long offsets[8] = {
+		// Red x and y offsets
+		std::lround(w * std::fmod(red_x.GetValue(frame_number), 1.0)),
+		std::lround(h * std::fmod(red_y.GetValue(frame_number), 1.0)),
+		// Green x and y offsets
+		std::lround(w * std::fmod(green_x.GetValue(frame_number), 1.0)),
+		std::lround(h * std::fmod(green_y.GetValue(frame_number), 1.0)),
+		// Blue x and y offsets
+		std::lround(w * std::fmod(blue_x.GetValue(frame_number), 1.0)),
+		std::lround(h * std::fmod(blue_y.GetValue(frame_number), 1.0)),
+		// Alpha x and y offsets
+		std::lround(w * std::fmod(alpha_x.GetValue(frame_number), 1.0)),
+		std::lround(h * std::fmod(alpha_y.GetValue(frame_number), 1.0))
+	};
 
-
-	// Make temp copy of pixels
-	unsigned char *temp_image = new unsigned char[frame_image_width * frame_image_height * 4]();
-	memcpy(temp_image, pixels, sizeof(char) * frame_image_width * frame_image_height * 4);
-
-	// Init position of current row and pixel
-	int starting_row_index = 0;
-	int byte_index = 0;
-
-	// Init RGBA values
-	unsigned char R = 0;
-	unsigned char G = 0;
-	unsigned char B = 0;
-	unsigned char A = 0;
-
-	int red_starting_row_index = 0;
-	int green_starting_row_index = 0;
-	int blue_starting_row_index = 0;
-	int alpha_starting_row_index = 0;
-
-	int red_pixel_offset = 0;
-	int green_pixel_offset = 0;
-	int blue_pixel_offset = 0;
-	int alpha_pixel_offset = 0;
+	// Make a writable copy of the image pixel array as our output memory
+	unsigned char *output = frame_image->bits();
 
 	// Loop through rows of pixels
-	for (int row = 0; row < frame_image_height; row++) {
-		for (int col = 0; col < frame_image_width; col++) {
-			// Get position of current row and pixel
-			starting_row_index = row * frame_image_width * 4;
-			byte_index = starting_row_index + (col * 4);
-			red_starting_row_index = starting_row_index;
-			green_starting_row_index = starting_row_index;
-			blue_starting_row_index = starting_row_index;
-			alpha_starting_row_index = starting_row_index;
+	for (int row = 0; row < h; row++) {
+		for (int col = 0; col < w; col++) {
 
+			int pixel = row * col * 4;
 
-			red_pixel_offset = 0;
-			green_pixel_offset = 0;
-			blue_pixel_offset = 0;
-			alpha_pixel_offset = 0;
+			// Compute byte location for source pixel, per channel
+			int red_x = row + std::abs(offsets[0]) >= w ? row + offsets[0] : w - row + offsets[0];
+			int red_y = col + std::abs(offsets[1]) >= h ? col + offsets[1] : h - row + offsets[1];
+			int green_x = row + std::abs(offsets[2]) >= w ? row + offsets[2] : w - row + offsets[2];
+			int green_y = col + std::abs(offsets[3]) >= h ? col + offsets[3] : h - row + offsets[3];
+			int blue_x = row + std::abs(offsets[4]) >= w ? row + offsets[4] : w - row + offsets[4];
+			int blue_y = col + std::abs(offsets[5]) >= h ? col + offsets[5] : h - row + offsets[5];
+			int alpha_x = row + std::abs(offsets[6]) >= w ? row + offsets[6] : w - row + offsets[6];
+			int alpha_y = col + std::abs(offsets[7]) >= h ? col + offsets[7] : h - row + offsets[7];
 
-			// Get the RGBA value from each pixel (depending on offset)
-			R = temp_image[byte_index];
-			G = temp_image[byte_index + 1];
-			B = temp_image[byte_index + 2];
-			A = temp_image[byte_index + 3];
-
-			// Shift X
-			if (red_x_shift > 0.0)
-				red_pixel_offset = (col + red_x_shift_limit) % frame_image_width;
-			if (red_x_shift < 0.0)
-				red_pixel_offset = (frame_image_width + col - red_x_shift_limit) % frame_image_width;
-			if (green_x_shift > 0.0)
-				green_pixel_offset = (col + green_x_shift_limit) % frame_image_width;
-			if (green_x_shift < 0.0)
-				green_pixel_offset = (frame_image_width + col - green_x_shift_limit) % frame_image_width;
-			if (blue_x_shift > 0.0)
-				blue_pixel_offset = (col + blue_x_shift_limit) % frame_image_width;
-			if (blue_x_shift < 0.0)
-				blue_pixel_offset = (frame_image_width + col - blue_x_shift_limit) % frame_image_width;
-			if (alpha_x_shift > 0.0)
-				alpha_pixel_offset = (col + alpha_x_shift_limit) % frame_image_width;
-			if (alpha_x_shift < 0.0)
-				alpha_pixel_offset = (frame_image_width + col - alpha_x_shift_limit) % frame_image_width;
-
-			// Shift Y
-			if (red_y_shift > 0.0)
-				red_starting_row_index = ((row + red_y_shift_limit) % frame_image_height) * frame_image_width * 4;
-			if (red_y_shift < 0.0)
-				red_starting_row_index = ((frame_image_height + row - red_y_shift_limit) % frame_image_height) * frame_image_width * 4;
-			if (green_y_shift > 0.0)
-				green_starting_row_index = ((row + green_y_shift_limit) % frame_image_height) * frame_image_width * 4;
-			if (green_y_shift < 0.0)
-				green_starting_row_index = ((frame_image_height + row - green_y_shift_limit) % frame_image_height) * frame_image_width * 4;
-			if (blue_y_shift > 0.0)
-				blue_starting_row_index = ((row + blue_y_shift_limit) % frame_image_height) * frame_image_width * 4;
-			if (blue_y_shift < 0.0)
-				blue_starting_row_index = ((frame_image_height + row - blue_y_shift_limit) % frame_image_height) * frame_image_width * 4;
-			if (alpha_y_shift > 0.0)
-				alpha_starting_row_index = ((row + alpha_y_shift_limit) % frame_image_height) * frame_image_width * 4;
-			if (alpha_y_shift < 0.0)
-				alpha_starting_row_index = ((frame_image_height + row - alpha_y_shift_limit) % frame_image_height) * frame_image_width * 4;
-
-			// Copy new values to this pixel
-			pixels[red_starting_row_index + 0 + (red_pixel_offset * 4)] = R;
-			pixels[green_starting_row_index + 1 + (green_pixel_offset * 4)] = G;
-			pixels[blue_starting_row_index + 2 + (blue_pixel_offset * 4)] = B;
-			pixels[alpha_starting_row_index + 3 + (alpha_pixel_offset * 4)] = A;
+			// Copy channel values from source pixel locations
+			output[(row * w + col) * 4] = pixels[(red_y * w + red_x) * 4];
+			output[(row * w + col) * 4 + 1] = pixels[(green_y * w + green_x) * 4 + 1];
+			output[(row * w + col) * 4 + 2] = pixels[(blue_y * w + blue_x) * 4 + 2];
+			output[(row * w + col) * 4 + 3] = pixels[(alpha_y * w + alpha_x) * 4 + 3];
 		}
 	}
-
-	// Delete arrays
-	delete[] temp_image;
 
 	// return the modified frame
 	return frame;
