@@ -16,6 +16,7 @@ find_path(
   HINTS
     ENV LIBOPENSHOT_AUDIO_DIR
   PATHS
+    ${OpenShotAudio_ROOT}
     ${LIBOPENSHOT_AUDIO_DIR}
   PATH_SUFFIXES
     include/libopenshot-audio
@@ -31,6 +32,7 @@ find_path(
   HINTS
     ENV LIBOPENSHOT_AUDIO_DIR
   PATHS
+    ${OpenShotAudio_ROOT}
     ${LIBOPENSHOT_AUDIO_DIR}
   PATH_SUFFIXES
     include/libopenshot-audio
@@ -47,6 +49,7 @@ find_library(
   HINTS
     ENV LIBOPENSHOT_AUDIO_DIR
   PATHS
+    ${OpenShotAudio_ROOT}
     ${LIBOPENSHOT_AUDIO_DIR}
   PATH_SUFFIXES
     lib/libopenshot-audio
@@ -64,6 +67,7 @@ find_library(
   HINTS
     ENV LIBOPENSHOT_AUDIO_DIR
   PATHS
+    ${OpenShotAudio_ROOT}
     ${LIBOPENSHOT_AUDIO_DIR}
   PATH_SUFFIXES
     lib/libopenshot-audio
