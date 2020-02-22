@@ -1,0 +1,3 @@
+[submodule "libopenshot-audio"]
+	path = libopenshot-audio
+	url = https://github.com/OpenShot/libopenshot-audio

@@ -94,7 +94,9 @@ if (ENABLE_BLACKMAGIC)
 
 endif()
 
-############ INCLUDE WHAT YOU USE ##################
+###
+### INCLUDE WHAT YOU USE
+###
 if(CMAKE_VERSION VERSION_LESS 3.3)
   # IWYU wasn't supported internally in 3.2
   set(ENABLE_IWYU FALSE)
@@ -186,26 +188,24 @@ set(QT_PLAYER_SOURCES
 set(CMAKE_MACOSX_RPATH 0)
 
 ############### CREATE LIBRARY #################
-# Create shared openshot library
-add_library(openshot SHARED)
 
-target_sources(openshot PRIVATE
+# Create object target for all library classes
+add_library(openshot_obj OBJECT)
+target_sources(openshot_obj PRIVATE
   ${OPENSHOT_SOURCES}
   ${EFFECTS_SOURCES}
   ${QT_PLAYER_SOURCES}
 )
 
-# Set SONAME and other library properties
-set_target_properties(openshot PROPERTIES
+# Automatically MOC classes in object library
+set_target_properties(openshot_obj PROPERTIES
   AUTOMOC ON
-  VERSION ${PROJECT_VERSION}
-  SOVERSION ${PROJECT_SO_VERSION}
-  INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+  POSITION_INDEPENDENT_CODE TRUE
 )
 
 # Add optional ImageMagic-dependent sources
 if(ImageMagick_FOUND)
-	target_sources(openshot PRIVATE
+	target_sources(openshot_obj PRIVATE
     ImageReader.cpp
     ImageWriter.cpp
     TextReader.cpp)
@@ -213,7 +213,7 @@ endif()
 
 # BlackMagic related files
 if(BLACKMAGIC_FOUND)
-  target_sources(openshot PRIVATE
+  target_sources(openshot_obj PRIVATE
     DecklinkInput.cpp
     DecklinkReader.cpp
     DecklinkOutput.cpp
@@ -221,9 +221,9 @@ if(BLACKMAGIC_FOUND)
 endif()
 
 # Location of our includes, both internally and when installed
-target_include_directories(openshot
+target_include_directories(openshot_obj
   PRIVATE
-	${CMAKE_CURRENT_SOURCE_DIR}
+	  ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_BINARY_DIR}/include
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -236,7 +236,7 @@ find_package(OpenShotAudio 0.2.0 REQUIRED)
 
 # Include Juce headers (needed for compile)
 if (NOT TARGET OpenShot::Audio)
-  add_library(OpenShotAudio_TARGET IMPORTED SHARED)
+  add_library(OpenShotAudio_TARGET INTERFACE)
   add_library(OpenShot::Audio ALIAS OpenShotAudio_TARGET)
   target_include_directories(OpenShotAudio_TARGET INTERFACE
    ${LIBOPENSHOT_AUDIO_INCLUDE_DIRS})
@@ -244,7 +244,7 @@ if (NOT TARGET OpenShot::Audio)
    ${LIBOPENSHOT_AUDIO_LIBRARIES})
 endif()
 
-target_link_libraries(openshot PUBLIC OpenShot::Audio)
+target_link_libraries(openshot_obj PUBLIC OpenShot::Audio)
 
 ################### JSONCPP #####################
 # Include jsoncpp headers (needed for JSON parsing)
@@ -276,7 +276,7 @@ endif ()
 
 # If we found any usable jsoncpp, use it. Otherwise, bail.
 if (TARGET jsoncpp_lib)
-  target_link_libraries(openshot PUBLIC jsoncpp_lib)
+  target_link_libraries(openshot_obj PUBLIC jsoncpp_lib)
 endif ()
 
 ################# QT5 ###################
@@ -286,7 +286,7 @@ find_package(Qt5 COMPONENTS ${_qt_components} REQUIRED)
 
 foreach(_qt_comp IN LISTS _qt_components)
   if(TARGET Qt5::${_qt_comp})
-    target_link_libraries(openshot PUBLIC Qt5::${_qt_comp})
+    target_link_libraries(openshot_obj PUBLIC Qt5::${_qt_comp})
   endif()
 endforeach()
 
@@ -296,7 +296,7 @@ find_package(FFmpeg REQUIRED COMPONENTS avcodec avdevice avformat avutil swscale
 
 foreach(ff_comp avcodec avdevice avformat avfilter avutil postproc swscale swresample avresample)
   if(TARGET FFmpeg::${ff_comp})
-		target_link_libraries(openshot PUBLIC FFmpeg::${ff_comp})
+		target_link_libraries(openshot_obj PUBLIC FFmpeg::${ff_comp})
   endif()
 endforeach()
 
@@ -305,7 +305,7 @@ endforeach()
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-target_link_libraries(openshot PUBLIC Threads::Threads)
+target_link_libraries(openshot_obj PUBLIC Threads::Threads)
 
 ################### OPENMP #####################
 # Check for OpenMP (used for multi-core processing)
@@ -322,7 +322,7 @@ if(NOT TARGET OpenMP::OpenMP_CXX)
     target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
 endif()
 
-target_link_libraries(openshot PUBLIC OpenMP::OpenMP_CXX)
+target_link_libraries(openshot_obj PUBLIC OpenMP::OpenMP_CXX)
 
 ################### ZEROMQ #####################
 # Find ZeroMQ library (used for socket communication & logging)
@@ -334,11 +334,11 @@ find_package(cppzmq QUIET) # Creates cppzmq target
 
 # Link ZeroMQ library
 if (TARGET libzmq)
-	target_link_libraries(openshot PUBLIC libzmq)
+	target_link_libraries(openshot_obj PUBLIC libzmq)
 endif()
 # Include cppzmq headers, if not bundled into libzmq
 if (TARGET cppzmq)
-  target_link_libraries(openshot PUBLIC cppzmq)
+  target_link_libraries(openshot_obj PUBLIC cppzmq)
 endif()
 
 ################### RESVG #####################
@@ -356,9 +356,9 @@ FIND_PACKAGE(RESVG)
 # Include resvg headers (optional SVG library)
 if (TARGET RESVG::resvg)
   #include_directories(${RESVG_INCLUDE_DIRS})
-  target_link_libraries(openshot PUBLIC RESVG::resvg)
+  target_link_libraries(openshot_obj PUBLIC RESVG::resvg)
 
-  target_compile_definitions(openshot PUBLIC "-DUSE_RESVG=1")
+  target_compile_definitions(openshot_obj PUBLIC "-DUSE_RESVG=1")
   set(CMAKE_SWIG_FLAGS "-DUSE_RESVG=1")
 endif()
 
@@ -366,32 +366,49 @@ endif()
 # Link remaining dependency libraries
 #
 if(ImageMagick_FOUND)
-  target_link_libraries(openshot PUBLIC ${ImageMagick_LIBRARIES})
+  target_link_libraries(openshot_obj PUBLIC ${ImageMagick_LIBRARIES})
 endif()
 
 if(BLACKMAGIC_FOUND)
-  target_link_libraries(openshot PUBLIC ${BLACKMAGIC_LIBRARY_DIR})
+  target_link_libraries(openshot_obj PUBLIC ${BLACKMAGIC_LIBRARY_DIR})
 endif()
 
 if(WIN32)
 	# Required for exception handling on Windows
-	target_link_libraries(openshot PUBLIC "imagehlp" "dbghelp" )
+	target_link_libraries(openshot_obj PUBLIC "imagehlp" "dbghelp" )
 endif()
 
-############### INSTALL HEADERS & LIBRARY ################
+###
+### libopenshot shared library
+###
+if(BUILD_INSTALLABLE)
+	# Create installable, versioned shared library
+	add_library(openshot SHARED)
 
-# Install primary library
-install(TARGETS openshot
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+	# Set SONAME and other shared library properties
+	set_target_properties(openshot PROPERTIES
+		VERSION ${PROJECT_VERSION}
+		SOVERSION ${PROJECT_SO_VERSION}
+		INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+	)
 
-install(
-  DIRECTORY .
-  DESTINATION
-    ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot
-  FILES_MATCHING PATTERN "*.h"
-)
+  # Link with object target
+  target_link_libraries(openshot PUBLIC openshot_obj)
+
+	# Install primary library
+	install(TARGETS openshot
+	  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+  # Install headers
+	install(
+	  DIRECTORY .
+	  DESTINATION
+	    ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot
+	  FILES_MATCHING PATTERN "*.h"
+	)
+endif()
 
 ############### CPACK PACKAGING ##############
 if(MINGW)

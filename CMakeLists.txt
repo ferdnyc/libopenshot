@@ -44,11 +44,11 @@ set(PROJECT_VERSION_FULL "0.2.5-dev2" CACHE STRING "The complete project version
 set(PROJECT_SO_VERSION 19)
 
 ### METADATA
-set(PROJECT_AUTHOR "Jonathan Thomas and contributors")
-set(PROJECT_AUTHOR_EMAIL "jonathan@openshot.org")
-set(PROJECT_MAINTAINER "Jonathan Thomas")
-set(PROJECT_MAINTAINER_EMAIL "jonathan@openshot.org")
-set(PROJECT_URL "https://github.com/OpenShot/libopenshot/")
+set(PROJECT_AUTHOR "Jonathan Thomas and contributors" CACHE STRING "Project metadata")
+set(PROJECT_AUTHOR_EMAIL "jonathan@openshot.org" CACHE STRING "Project metadata")
+set(PROJECT_MAINTAINER "Jonathan Thomas" CACHE STRING "Project metadata")
+set(PROJECT_MAINTAINER_EMAIL "jonathan@openshot.org" CACHE STRING "Project metadata")
+set(PROJECT_URL "https://github.com/OpenShot/libopenshot/" CACHE STRING "Project metadata")
 
 # Remove the dash and anything following, to get the #.#.# version for project()
 STRING(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
@@ -78,16 +78,43 @@ include(GNUInstallDirs)
 # Collect and display summary of options/dependencies
 include(FeatureSummary)
 
+# Set up option() dependencies
+include(CMakeDependentOption)
+
 ###
 ### OPTIONS
 ###
-# Optional build settings for libopenshot
+# Configurable build settings for libopenshot
+
+# What to build
+option(BUILD_INSTALLABLE "Build an installable shared library" ON)
+option(BUILD_BUNDLED "Build lib for direct inclusion with bindings" OFF)
+option(ENABLE_PYTHON "Generate Python bindings using SWIG" ON)
+option(PYTHON_BUILD_PACKAGE "Package bindings using setuptools" ON)
+option(ENABLE_RUBY "Generate Ruby bindings using SWIG" ON)
+
+# What to include
 option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
 option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
+
+# What to do while building it
 option(ENABLE_IWYU "Enable 'Include What You Use' scanner (CMake 3.3+)" OFF)
 option(ENABLE_TESTS "Build unit tests (requires UnitTest++)" ON)
 option(ENABLE_DOCS "Build API documentation (requires Doxygen)" ON)
-option(PYTHON_BUNDLE_LIBS "Install libopenshot in Python package" ON)
+
+###
+### Apply conditionals to modify build parameters
+###
+
+# Bundling option (EXPERIMENTAL) requires Python bindings and packaging enabled
+cmake_dependent_option(PYTHON_BUNDLE_LIBS
+  "Incorporate libopenshot directly into Python package"
+  OFF "ENABLE_PYTHON;PYTHON_BUILD_PACKAGE" # default OFF if conditions TRUE
+  OFF                                      # else forced OFF unconditionally (disabled)
+)
+if (PYTHON_BUNDLE_LIBS)
+  set(BUILD_BUNDLED ON)
+endif()
 
 # Legacy commandline override
 if (DISABLE_TESTS)
@@ -101,6 +128,13 @@ endif()
 
 if(DEFINED ENABLE_TESTS)
   set(ENABLE_TESTS ${ENABLE_TESTS} CACHE BOOL "Build unit tests (requires UnitTest++)" FORCE)
+endif()
+
+if(ENABLE_PYTHON)
+  set(PYTHON_ENABLED ON)
+endif()
+if(ENABLE_RUBY)
+  set(RUBY_ENABLED ON)
 endif()
 
 ### Configure Version.h header
@@ -160,10 +194,11 @@ include_directories(${LIBOPENSHOT_AUDIO_INCLUDE_DIRS})
 ###
 add_subdirectory(src)
 add_subdirectory(examples)
-add_subdirectory(bindings)
 
 # Generate SWIG bindings
-add_subdirectory(bindings)
+if(RUBY_ENABLED OR PYTHON_ENABLED)
+  add_subdirectory(bindings)
+endif()
 
 ###
 ### DOCUMENTATION
@@ -216,6 +251,33 @@ feature_summary(WHAT ALL
     INCLUDE_QUIET_PACKAGES
     FATAL_ON_MISSING_REQUIRED_PACKAGES
     DESCRIPTION "Displaying feature summary\n\nBuild configuration:")
+
+###
+### Python packaging
+###
+
+if(PYTHON_BUILD_PACKAGE)
+  # file(GENERATE
+  #   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python/libopenshot/__init__.py
+  #   INPUT ${PROJECT_SOURCE_DIR}/bindings/libopenshot_init.py.in
+  # )
+  # file(GENERATE
+  #   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python/openshot/__init__.py
+  #   INPUT ${PROJECT_SOURCE_DIR}/bindings/openshot_init.py.in
+  # )
+
+  ### Create packaging files
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/bindings/setup.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/setup.py
+  )
+
+  # install(CODE "configure_file(\
+  #   ${PROJECT_SOURCE_DIR}/bindings/setup.py.in\
+  #   ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)"
+  #   COMPONENT PyPackage EXCLUDE_FROM_ALL
+  # )
+endif()
 
 ###
 ### CPack packaging metadata

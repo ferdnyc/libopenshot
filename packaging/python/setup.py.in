@@ -4,7 +4,7 @@ import sys
 import setuptools
 
 dist = setuptools.setup(
-    name='libopenshot',
+    name='@PROJECT_NAME@',
     version='@PROJECT_VERSION_FULL@',
     description='Python bindings for libopenshot',
     url="@PROJECT_URL@",
@@ -28,12 +28,11 @@ dist = setuptools.setup(
         'Topic :: Multimedia :: Video',
         'Topic :: Multimedia :: Sound/Audio',
     ],
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages('bindings'),
     package_data={
         # Include the SWIG shared library object
         "libopenshot": ["*.so", "*.dll", "*.dylib"],
     },
     include_package_data=True,
     zip_safe=False,
-    py_modules=["openshot"]
 )
