@@ -29,14 +29,17 @@
  */
 
 #include "UnitTest++.h"
+
 // Prevent name clashes with juce::UnitTest
 #define DONT_SET_USING_JUCE_NAMESPACE 1
 #include "../include/OpenShot.h"
 
-using namespace std;
 using namespace openshot;
 
-TEST(FrameMapper_Get_Valid_Frame)
+SUITE(FrameMapper)
+{
+
+TEST(Get_Valid_Frame)
 {
 	// Create a reader
 	DummyReader r(Fraction(24,1), 720, 480, 22000, 2, 5.0);
@@ -57,7 +60,7 @@ TEST(FrameMapper_Get_Valid_Frame)
 	}
 }
 
-TEST(FrameMapper_Invalid_Frame_Too_Small)
+TEST(Invalid_Frame_Too_Small)
 {
 	// Create a reader
 	DummyReader r(Fraction(24,1), 720, 480, 22000, 2, 5.0);
@@ -70,7 +73,7 @@ TEST(FrameMapper_Invalid_Frame_Too_Small)
 
 }
 
-TEST(FrameMapper_24_fps_to_30_fps_Pulldown_Classic)
+TEST(24_fps_to_30_fps_Pulldown_Classic)
 {
 	// Create a reader
 	DummyReader r(Fraction(24,1), 720, 480, 22000, 2, 5.0);
@@ -87,7 +90,7 @@ TEST(FrameMapper_24_fps_to_30_fps_Pulldown_Classic)
 	CHECK_EQUAL(3, frame3.Even.Frame);
 }
 
-TEST(FrameMapper_24_fps_to_30_fps_Pulldown_Advanced)
+TEST(24_fps_to_30_fps_Pulldown_Advanced)
 {
 	// Create a reader
 	DummyReader r(Fraction(24,1), 720, 480, 22000, 2, 5.0);
@@ -107,7 +110,7 @@ TEST(FrameMapper_24_fps_to_30_fps_Pulldown_Advanced)
 	CHECK_EQUAL(3, frame4.Even.Frame);
 }
 
-TEST(FrameMapper_24_fps_to_30_fps_Pulldown_None)
+TEST(24_fps_to_30_fps_Pulldown_None)
 {
 	// Create a reader
 	DummyReader r(Fraction(24,1), 720, 480, 22000, 2, 5.0);
@@ -124,7 +127,7 @@ TEST(FrameMapper_24_fps_to_30_fps_Pulldown_None)
 	CHECK_EQUAL(4, frame5.Even.Frame);
 }
 
-TEST(FrameMapper_30_fps_to_24_fps_Pulldown_Classic)
+TEST(30_fps_to_24_fps_Pulldown_Classic)
 {
 	// Create a reader
 	DummyReader r(Fraction(30, 1), 720, 480, 22000, 2, 5.0);
@@ -144,7 +147,7 @@ TEST(FrameMapper_30_fps_to_24_fps_Pulldown_Classic)
 	CHECK_EQUAL(6, frame5.Even.Frame);
 }
 
-TEST(FrameMapper_30_fps_to_24_fps_Pulldown_Advanced)
+TEST(30_fps_to_24_fps_Pulldown_Advanced)
 {
 	// Create a reader
 	DummyReader r(Fraction(30, 1), 720, 480, 22000, 2, 5.0);
@@ -164,7 +167,7 @@ TEST(FrameMapper_30_fps_to_24_fps_Pulldown_Advanced)
 	CHECK_EQUAL(5, frame4.Even.Frame);
 }
 
-TEST(FrameMapper_30_fps_to_24_fps_Pulldown_None)
+TEST(30_fps_to_24_fps_Pulldown_None)
 {
 	// Create a reader
 	DummyReader r(Fraction(30, 1), 720, 480, 22000, 2, 5.0);
@@ -181,10 +184,10 @@ TEST(FrameMapper_30_fps_to_24_fps_Pulldown_None)
 	CHECK_EQUAL(6, frame5.Even.Frame);
 }
 
-TEST(FrameMapper_resample_audio_48000_to_41000)
+TEST(Resample_audio_48k_to_44_1)
 {
 	// Create a reader: 24 fps, 2 channels, 48000 sample rate
-	stringstream path;
+	std::stringstream path;
 	path << TEST_MEDIA_PATH << "sintel_trailer-720p.mp4";
 	FFmpegReader r(path.str());
 
@@ -210,3 +213,6 @@ TEST(FrameMapper_resample_audio_48000_to_41000)
 	// Close mapper
 	map.Close();
 }
+
+} // SUITE
+
