@@ -1,0 +1,16 @@
+version: 1.0.{build}
+init:
+- cmd: >-
+    set PATH=C:\MSYS64\mingw64\bin;C:\msys64\mingw64\lib;%PATH%
+
+    c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S mingw-w64-x86_64-toolchain base-devel"
+
+    c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S mingw64/mingw-w64-x86_64-ffmpeg mingw64/mingw-w64-x86_64-python3-pyqt5 mingw64/mingw-w64-x86_64-swig mingw64/mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-doxygen mingw64/mingw-w64-x86_64-python3-pip mingw64/mingw-w64-x86_64-zeromq mingw64/mingw-w64-x86_64-python3-pyzmq mingw64/mingw-w64-x86_64-python3-cx_Freeze"
+
+    c:\msys64\usr\bin\bash -lc "pip3 install httplib2"
+artifacts:
+- path: build/install-x64
+  name: libopenshot-audio-install
+deploy:
+- provider: Environment
+  name: libopenshot-install
