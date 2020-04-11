@@ -36,17 +36,26 @@ you of any missing files or other issues.
 For more information, please visit <http://www.openshot.org/>.
 -----------------------------------------------------------------")
 
-################ ADD CMAKE MODULES ##################
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
+### ADD CMAKE MODULES
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-################ PROJECT VERSION ####################
-set(PROJECT_VERSION_FULL "0.2.5-dev2")
+### PROJECT VERSION
+set(PROJECT_VERSION_FULL "0.2.5-dev2" CACHE STRING "The complete project version string")
 set(PROJECT_SO_VERSION 19)
+
+### METADATA
+set(PROJECT_AUTHOR "Jonathan Thomas and contributors")
+set(PROJECT_AUTHOR_EMAIL "jonathan@openshot.org")
+set(PROJECT_MAINTAINER "Jonathan Thomas")
+set(PROJECT_MAINTAINER_EMAIL "jonathan@openshot.org")
+set(PROJECT_URL "https://github.com/OpenShot/libopenshot/")
 
 # Remove the dash and anything following, to get the #.#.# version for project()
 STRING(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
 
-################### SETUP PROJECT ###################
+###
+### SETUP PROJECT
+###
 # This will define the following variables
 # PROJECT_NAME
 # PROJECT_VERSION, libopenshot_VERSION
@@ -69,13 +78,16 @@ include(GNUInstallDirs)
 # Collect and display summary of options/dependencies
 include(FeatureSummary)
 
-################ OPTIONS ##################
+###
+### OPTIONS
+###
 # Optional build settings for libopenshot
 option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
 option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
 option(ENABLE_IWYU "Enable 'Include What You Use' scanner (CMake 3.3+)" OFF)
 option(ENABLE_TESTS "Build unit tests (requires UnitTest++)" ON)
 option(ENABLE_DOCS "Build API documentation (requires Doxygen)" ON)
+option(PYTHON_BUNDLE_LIBS "Install libopenshot in Python package" ON)
 
 # Legacy commandline override
 if (DISABLE_TESTS)
@@ -91,14 +103,14 @@ if(DEFINED ENABLE_TESTS)
   set(ENABLE_TESTS ${ENABLE_TESTS} CACHE BOOL "Build unit tests (requires UnitTest++)" FORCE)
 endif()
 
-########## Configure Version.h header ##############
+### Configure Version.h header
 configure_file(include/OpenShotVersion.h.in include/OpenShotVersion.h @ONLY)
 # We'll want that installed later
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/OpenShotVersion.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
 
-#### Work around a GCC < 9 bug with handling of _Pragma() in macros
-#### See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
+# Work around a GCC < 9 bug with handling of _Pragma() in macros
+# See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
 if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") AND
     (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "9.0.0"))
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -no-integrated-cpp")
@@ -139,20 +151,27 @@ if(NOT DEFINED CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
-############## PROCESS src/ DIRECTORIES ##############
 ### Set up include paths
 find_package(OpenShotAudio 0.2.0 REQUIRED)
 include_directories(${LIBOPENSHOT_AUDIO_INCLUDE_DIRS})
 
+###
+### SUBDIRECTORIES
+###
 add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(bindings)
 
-################### DOCUMENTATION ###################
+# Generate SWIG bindings
+add_subdirectory(bindings)
+
+###
+### DOCUMENTATION
+###
 # Find Doxygen (used for documentation)
 set(DOCS_ENABLED FALSE) # Only set true if Doxygen is found and configured
 if (ENABLE_DOCS)
-  include(cmake/Modules/UseDoxygen.cmake)
+  include(UseDoxygen)
 
   # Doxygen was found
   if (TARGET doc)
@@ -171,14 +190,18 @@ if (ENABLE_DOCS)
 endif()
 add_feature_info("Documentation" DOCS_ENABLED "Build API documentation with 'make doc'")
 
-############# PROCESS tests/ DIRECTORY ##############
+###
+### Unit Tests
+###
 if(ENABLE_TESTS)
   set(TESTS_ENABLED TRUE) # May be overridden by tests/CMakeLists.txt
   add_subdirectory(tests)
 endif()
 add_feature_info("Unit tests" TESTS_ENABLED "Compile unit tests for library functions")
 
-############## COVERAGE REPORTING #################
+###
+### Coverage reporting
+###
 if (ENABLE_COVERAGE)
   setup_target_for_coverage_lcov(
     NAME coverage
@@ -188,7 +211,7 @@ if (ENABLE_COVERAGE)
     message("Generate coverage report with 'make coverage'")
 endif()
 
-########### PRINT FEATURE SUMMARY ##############
+### Display feature summary
 feature_summary(WHAT ALL
     INCLUDE_QUIET_PACKAGES
     FATAL_ON_MISSING_REQUIRED_PACKAGES
