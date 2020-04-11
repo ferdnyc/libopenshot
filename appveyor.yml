@@ -1,5 +1,7 @@
 version: 1.0.{build}
-init:
+image: Visual Studio 2015
+
+before_build:
 - cmd: >-
     set PATH=C:\MSYS64\mingw64\bin;C:\msys64\mingw64\lib;%PATH%
 
@@ -8,9 +10,59 @@ init:
     c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S mingw64/mingw-w64-x86_64-ffmpeg mingw64/mingw-w64-x86_64-python3-pyqt5 mingw64/mingw-w64-x86_64-swig mingw64/mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-doxygen mingw64/mingw-w64-x86_64-python3-pip mingw64/mingw-w64-x86_64-zeromq mingw64/mingw-w64-x86_64-python3-pyzmq mingw64/mingw-w64-x86_64-python3-cx_Freeze"
 
     c:\msys64\usr\bin\bash -lc "pip3 install httplib2"
+
+    set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+
+    git clone https://github.com/unittest-cpp/unittest-cpp
+
+    mkdir unittest-cpp-build
+
+    cd unittest-cpp-build
+
+    cmake -DCMAKE_INSTALL_PREFIX=..\build\install-x64 -G "MinGW Makefiles" ..\unittest-cpp
+
+    cmake --build . -- VERBOSE=1
+
+    mingw32-make install
+
+    cd ..
+
+    git clone https://github.com/OpenShot/libopenshot-audio
+
+    mkdir libopenshot-audio-build
+
+    cd libopenshot-audio-build
+
+    cmake -DCMAKE_INSTALL_PREFIX=..\build\install-x64 -G "MinGW Makefiles" ..\libopenshot-audio
+
+    cmake --build . -- VERBOSE=1
+
+    mingw32-make install
+
+    cd ..
+
+build_script:
+- cmd: >-
+
+    cd build
+
+    cmake -DCMAKE_INSTALL_PREFIX=install-x64 -DOpenShotAudio_ROOT=install-x64 -G "MinGW Makefiles" ..
+
+    cmake --build . -- VERBOSE=1
+
+    mingw32-make test
+
+    mingw32-make install
+
+    cd ..
+
+test: off
+
+cache: build\install-x64
 artifacts:
-- path: build/install-x64
+- path: 'build\install-x64'
   name: libopenshot-audio-install
+  type: Zip
 deploy:
 - provider: Environment
   name: libopenshot-install
