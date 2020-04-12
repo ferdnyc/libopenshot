@@ -36,9 +36,13 @@ install:
 
     IF NOT EXIST build\install-x64 appveyor\build-libopenshot-audio.bat
 
+    IF NOT EXIST build\install-x64\bin mkdir build\instal-x64\bin
+
+    IF EXIST build\install-x64\lib\libopenshot-audio.dll move build\install-x64\lib\libopenshot-audio.dll build\install-x64\bin\
+
 # The build will pause here and wait for an RDP connection
-before_build:
-- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#before_build:
+#- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 build_script:
 - cmd: >-
