@@ -1,18 +1,14 @@
 version: 1.0.{build}
 image: Visual Studio 2015
 environment:
-  APPVEYOR_SSH_KEY:
-    secure: qraMtHSme0UJRT+hr5MSxJZIuaJ9ytkwyjW4WG8edHlEkLF8OWFHAo9oA/cIrQcWoxhYAm6J1D5VC9khZRbScvaJ6gmO3a+jg+ms9oGqmXtf3TAalOzR3PEg2WQavxE8WCkpmGgdI+3AmDev6wK9TSLIuyM5jk05ckjiYVlhyH4jLQv2nR8rmv7c2KdcXrbxrZ71rYNaMKf/Os0h5Usu/HRwJuw2nXw5lSfzkWN/JkDl+PVnSvOoOcskDdES6fFlq7x1ENLcjdHq0r5ZRRdWuZSP0akqpcz8jTKnivZ4hRfndIe6Uq1034z1VY6EPhDNC2qCvs4l8PktYvtd15PFIXnNuRaRsXwBHbvYRFcC8+QPfmci2UYEzSsVCbpEpL/Xra6zm1qJfpUEu6g0sL6ys7gxG0f0nsms2Xz4OlZM8aoroMaDkHZA1Fywq9nDEE3wZ3yAiOEy6cKVaUSauyH/V5z4oWNZrDddcITlzFl5zJBQkoG7pwl4fozmXiT4dDCCY6Jpxy8KJl6SYWimN60yBvY9yvOYBIacg3DUW/RChRX6GD/HhZlrhyJd6FRfEhYWnL021VzW6fXCpzYP1d5N0EMfpwL+11UVcZB4sJe9UoNhFgiem8vQX+KHPAHvDQzqSXNCAc5iaL2/3kKphTwO0GyJCdN9gYlOMR62ZVVROthpSvoT1sLDMNOBGAeA6X9xKLV3vY6zgzTyjXx7SwwUDRReeD9dSw4iMf9Vk0VHmrFMaxU3miQ+AQO1TdFL8Vrq
-  APPVEYOR_SSH_BLOCK: true
+  APPVEYOR_RDP_PASSWORD:
+    secure: JoBWH3vCpaoh7UcfBjo57g==
 cache: build\install-x64
 nuget:
   account_feed: true
   project_feed: true
 
-init:
-- sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
-
-before_build:
+install:
 - cmd: >-
     set PATH=C:\MSYS64\mingw64\bin;C:\msys64\mingw64\lib;%PATH%
 
@@ -39,6 +35,10 @@ before_build:
     echo "DISABLED: cd .."
 
     IF NOT EXIST build\install-x64 appveyor\build-libopenshot-audio.bat
+
+# The build will pause here and wait for an RDP connection
+before_build:
+- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 build_script:
 - cmd: >-
