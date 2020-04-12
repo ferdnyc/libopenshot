@@ -8,8 +8,11 @@ cache: build\install-x64
 nuget:
   account_feed: true
   project_feed: true
-before_build:
+
+init:
 - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
+before_build:
 - cmd: >-
     set PATH=C:\MSYS64\mingw64\bin;C:\msys64\mingw64\lib;%PATH%
 
@@ -35,23 +38,7 @@ before_build:
 
     echo "DISABLED: cd .."
 
-    IF EXIST build\install-x64 goto end
-
-    git clone https://github.com/OpenShot/libopenshot-audio
-
-    mkdir libopenshot-audio-build
-
-    cd libopenshot-audio-build
-
-    cmake -DCMAKE_INSTALL_PREFIX=..\build\install-x64 -G "MinGW Makefiles" ..\libopenshot-audio
-
-    cmake --build . -- VERBOSE=1
-
-    mingw32-make install
-
-    cd ..
-
-    :end
+    IF NOT EXIST build\install-x64 appveyor\build-libopenshot-audio.bat
 
 build_script:
 - cmd: >-
