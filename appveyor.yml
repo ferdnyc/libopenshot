@@ -3,7 +3,7 @@ image: Visual Studio 2015
 environment:
   APPVEYOR_RDP_PASSWORD:
     secure: JoBWH3vCpaoh7UcfBjo57g==
-cache: build\install-x64
+cache: build\cache-x64
 nuget:
   account_feed: true
   project_feed: true
@@ -34,11 +34,11 @@ install:
 
     echo "DISABLED: cd .."
 
-    IF NOT EXIST build\install-x64 appveyor\build-libopenshot-audio.bat
+    IF NOT EXIST build\cache-x64\bin\libopenshot.dll appveyor\build-libopenshot-audio.bat
 
-    IF NOT EXIST build\install-x64\bin mkdir build\instal-x64\bin
+    IF NOT EXIST build\cache-x64\bin mkdir build\cache-x64\bin
 
-    IF EXIST build\install-x64\lib\libopenshot-audio.dll move build\install-x64\lib\libopenshot-audio.dll build\install-x64\bin\
+    IF EXIST build\cache-x64\lib\libopenshot-audio.dll move build\cache-x64\lib\libopenshot-audio.dll build\cache-x64\bin\
 
 # The build will pause here and wait for an RDP connection
 #before_build:
@@ -49,13 +49,13 @@ build_script:
 
     cd build
 
-    cmake -DCMAKE_INSTALL_PREFIX=install-x64 -DENABLE_TESTS=0 -DOpenShotAudio_ROOT=install-x64 -G "MinGW Makefiles" ..
+    cmake -DCMAKE_INSTALL_PREFIX=install-x64 -DENABLE_TESTS=0 -DOpenShotAudio_ROOT=cache-x64 -G "MinGW Makefiles" ..
 
     cmake --build . -- VERBOSE=1
 
     echo "TESTS DISABLED, UnitTest++ not working: mingw32-make test"
 
-    mingw32-make install
+    cmake --build . --target install -- VERBOSE=1
 
     cd ..
 

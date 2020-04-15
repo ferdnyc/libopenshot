@@ -43,6 +43,16 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
 set(PROJECT_VERSION_FULL "0.2.5-dev2")
 set(PROJECT_SO_VERSION 19)
 
+### METADATA
+set(PROJECT_AUTHOR "Jonathan Thomas and contributors")
+set(PROJECT_AUTHOR_EMAIL "jonathan@openshot.org")
+set(PROJECT_MAINTAINER "Jonathan Thomas")
+set(PROJECT_MAINTAINER_EMAIL "jonathan@openshot.org")
+set(PROJECT_URL "https://github.com/OpenShot/libopenshot/")
+set(PROJECT_DESCRIPTION [=[
+OpenShot Library (libopenshot) is a free, open-source project that enables high-quality video editing.
+]=])
+
 # Remove the dash and anything following, to get the #.#.# version for project()
 STRING(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
 
@@ -174,6 +184,26 @@ endif()
 
 ########### PRINT FEATURE SUMMARY ##############
 feature_summary(WHAT ALL
-    INCLUDE_QUIET_PACKAGES
-    FATAL_ON_MISSING_REQUIRED_PACKAGES
-    DESCRIPTION "Displaying feature summary\n\nBuild configuration:")
+  INCLUDE_QUIET_PACKAGES
+  FATAL_ON_MISSING_REQUIRED_PACKAGES
+  DESCRIPTION "Displaying feature summary\n\nBuild configuration:")
+
+###
+### CPack packaging metadata
+###
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_FULL})
+set(CPACK_PACKAGE_HOMEPAGE_URL ${PROJECT_URL})
+if(MINGW)
+	set(CPACK_GENERATOR "NuGet")
+  set(CPACK_PACKAGE_DIRECTORY ${CMAKE_INSTALL_PREFIX})
+endif()
+if(UNIX AND NOT APPLE)
+	set(CPACK_GENERATOR "DEB")
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER ${PROJECT_MAINTAINER}) #required
+endif()
+#if(UNIX AND APPLE)
+#	set(CPACK_GENERATOR "DragNDrop")
+#endif()
+
+include(CPack)
