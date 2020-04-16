@@ -17,24 +17,17 @@ matrix:
     - platform: x86
       image: macos
 
-cache: &common install-cache
-
 for:
 # Windows (both)
 -
   matrix:
     except:
       - image: macos
-  cache:
-    - *common
-    - C:\msys64\mingw64\var\cache\pacman
-    - C:\msys64\mingw32\var\cache\pacman
   init:
   - cmd: IF %PLATFORM% == x64 (set PLAT_BITS=64) ELSE (set PLAT_BITS=32)
   - cmd: IF %PLATFORM% == x64 (set PLAT_ARCH=x86_64) ELSE (set PLAT_ARCH=i686)
   - cmd: set PATH=C:\msys64\mingw%PLAT_BITS%\bin;c:\msys64\mingw%PLAT_BITS%\lib;%PATH%
-  - cmd: set LIBOPENSHOT_CACHE="%APPVEYOR_BUILD_FOLDER%\install-cache\%PLAT_ARCH%\bin\libopenshot-audio.dll"
-  - cmd: set CMAKE_EXTRA_ARGS="-DENABLE_RUBY=0 -DOpenShotAudio_ROOT=..\install-cache\%PLAT_ARCH%"
+  - cmd: set CMAKE_EXTRA_ARGS="-DENABLE_RUBY=0 -DOpenShotAudio_ROOT=install-%PLAT_ARCH%"
 
   install:
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
@@ -52,9 +45,9 @@ for:
 
   before_build:
   - cmd: set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
-  - cmd: IF NOT EXIST %LIBOPENSHOT_CACHE% appveyor\build-libopenshot-audio.bat
-  - cmd: IF NOT EXIST install-cache\%PLAT_ARCH%\bin mkdir install-cache\%PLAT_ARCH%\bin
-  - cmd: IF EXIST install-cache\%PLAT_ARCH%\lib\libopenshot-audio.dll copy install-cache\%PLAT_ARCH%\lib\libopenshot-audio.dll install-cache\%PLAT_ARCH%\bin\
+  - cmd: appveyor\build-libopenshot-audio.bat
+  - cmd: IF NOT EXIST install-%PLAT_ARCH%\bin mkdir install-%PLAT_ARCH%\bin
+  - cmd: IF EXIST install-%PLAT_ARCH%\lib\libopenshot-audio.dll copy install-%PLAT_ARCH%\lib\libopenshot-audio.dll install-%PLAT_ARCH%\bin\
 
   build_script:
   - cmd: mkdir build-%PLAT_ARCH%
@@ -73,8 +66,7 @@ for:
       - image: macos
   init:
   - sh: export PLAT_ARCH="macos-x64"
-  - sh: export LIBOPENSHOT_CACHE="${APPVEYOR_BUILD_FOLDER}/install-cache/${PLAT_ARCH}/lib/libopenshot-audio.dylib"
-  - sh: export CMAKE_EXTRA_ARGS="-DOpenShotAudio_ROOT=${APPVEYOR_BUILD_FOLDER}/install-cache/${PLAT_ARCH}"
+  - sh: export CMAKE_EXTRA_ARGS="-DOpenShotAudio_ROOT=${APPVEYOR_BUILD_FOLDER}/install-${PLAT_ARCH}"
   install:
   - sh: brew install
         gcc@9 libomp swig unittest-cpp rust qt
@@ -83,9 +75,9 @@ for:
   before_build:
   - sh: mkdir build-${PLAT_ARCH}
   - sh: eval $(brew --env|grep -i cmake)
-  - sh: if [ \! -e "${LIBOPENSHOT_CACHE}" ]; then
-          mkdir libopenshot-audio-build-${PLAT_ARCH}; pushd libopenshot-audio-build-${PLAT_ARCH};
-          cmake -DCMAKE_INSTALL_PREFIX=../install-cache/${PLAT_ARCH}/ ../libopenshot-audio;
+  - sh: git clone https://github.com/OpenShot/libopenshot-audio;
+        mkdir libopenshot-audio/build-${PLAT_ARCH}; pushd libopenshot-audio/build-${PLAT_ARCH};
+          cmake -DCMAKE_INSTALL_PREFIX=install-${PLAT_ARCH}/ ..;
           cmake --build . -- VERBOSE=1;
           cmake --build . --target install -- VERBOSE=1;
           popd;
@@ -95,10 +87,11 @@ for:
         cmake $(brew diy --name cppzmq --version $(sh ./version.sh)) -DENABLE_DRAFTS=0 .;
         cmake --build . -- VERBOSE=1;
         cmake --build . --target install;
+        brew link --verbose cppzmq;
         cd ..
   build_script:
   - sh: mkdir -p build-${PLAT_ARCH}; cd build-${PLAT_ARCH};
-  - sh: cmake -DCMAKE_INSTALL_PREFIX:PATH=install-${PLAT_ARCH} -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_CXX_FLAGS_DEBUG="-Wall -Wpedantic" -DOpenShotAudio_ROOT=../install-cache/${PLAT_ARCH} ${CMAKE_EXTRA_ARGS} ../
+  - sh: cmake -DCMAKE_INSTALL_PREFIX:PATH=install-${PLAT_ARCH} -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_CXX_FLAGS_DEBUG="-Wall -Wpedantic" -DOpenShotAudio_ROOT=install-${PLAT_ARCH} ${CMAKE_EXTRA_ARGS} ../
   - sh: cmake --build . -- VERBOSE=1
   - sh: cmake --build . --target test
   - sh: cmake --build . --target install
