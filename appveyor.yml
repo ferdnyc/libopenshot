@@ -54,11 +54,11 @@ for:
   - cmd: set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
   - cmd: IF NOT EXIST %LIBOPENSHOT_CACHE% appveyor\build-libopenshot-audio.bat
   - cmd: IF NOT EXIST install-cache\%PLAT_ARCH%\bin mkdir install-cache\%PLAT_ARCH%\bin
-  - cmd: IF EXIST install-cache\%PLAT_ARCH%\lib\libopenshot-audio.dll move install-cache\%PLAT_ARCH%\lib\libopenshot-audio.dll install-cache\%PLAT_ARCH%\bin\
+  - cmd: IF EXIST install-cache\%PLAT_ARCH%\lib\libopenshot-audio.dll copy install-cache\%PLAT_ARCH%\lib\libopenshot-audio.dll install-cache\%PLAT_ARCH%\bin\
 
   build_script:
-  - cmd: mkdir build
-  - cmd: cd build
+  - cmd: mkdir build-%PLAT_ARCH%
+  - cmd: cd build-%PLAT_ARCH%
   - cmd: cmake  -DCMAKE_INSTALL_PREFIX:PATH=install-%PLATFORM% -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_CXX_FLAGS_DEBUG="-Wall -Wpedantic" %CMAKE_EXTRA_ARGS% -G "MinGW Makefiles"  ..
   - cmd: cmake --build . -- VERBOSE=1
   #XXX: TESTS DISABLED, FAILING
@@ -74,16 +74,17 @@ for:
   init:
   - sh: export PLAT_ARCH="macos-x64"
   - sh: export LIBOPENSHOT_CACHE="${APPVEYOR_BUILD_FOLDER}/install-cache/${PLAT_ARCH}/lib/libopenshot-audio.dylib"
-  - sh: export CMAKE_EXTRA_ARGS="-DOpenShotAudio_ROOT=../install-cache/${PLAT_ARCH}"
+  - sh: export CMAKE_EXTRA_ARGS="-DOpenShotAudio_ROOT=${APPVEYOR_BUILD_FOLDER}/install-cache/${PLAT_ARCH}"
   install:
   - sh: brew install
         gcc@9 libomp swig unittest-cpp rust qt
         imagemagick libvpx x264 x265
         fdk-aac fdk-aac-encoder ffmpeg zeromq
   before_build:
-  - sh: mkdir build
+  - sh: mkdir build-${PLAT_ARCH}
+  - sh: eval $(brew --env|grep -i cmake)
   - sh: if [ \! -e "${LIBOPENSHOT_CACHE}" ]; then
-          mkdir libopenshot-audio-build; pushd libopenshot-audio-build;
+          mkdir libopenshot-audio-build-${PLAT_ARCH}; pushd libopenshot-audio-build-${PLAT_ARCH};
           cmake -DCMAKE_INSTALL_PREFIX=../install-cache/${PLAT_ARCH}/ ../libopenshot-audio;
           cmake --build . -- VERBOSE=1;
           cmake --build . --target install -- VERBOSE=1;
@@ -95,11 +96,9 @@ for:
         cmake --build . -- VERBOSE=1;
         cmake --build . --target install;
         cd ..
-  - sh: eval $(brew --env|grep -i cmake);
-        export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} -DFFmpeg_ROOT=$(brew --prefix ffmpeg)"
   build_script:
-  - sh: mkdir -p build; cd build;
-  - sh: cmake -DCMAKE_INSTALL_PREFIX:PATH=install-${PLAT_ARCH} -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_CXX_FLAGS_DEBUG="-Wall -Wpedantic" ${CMAKE_EXTRA_ARGS} ../
+  - sh: mkdir -p build-${PLAT_ARCH}; cd build-${PLAT_ARCH};
+  - sh: cmake -DCMAKE_INSTALL_PREFIX:PATH=install-${PLAT_ARCH} -DCMAKE_BUILD_TYPE:STRING=Debug -DCMAKE_CXX_FLAGS_DEBUG="-Wall -Wpedantic" -DOpenShotAudio_ROOT=../install-cache/${PLAT_ARCH} ${CMAKE_EXTRA_ARGS} ../
   - sh: cmake --build . -- VERBOSE=1
   - sh: cmake --build . --target test
   - sh: cmake --build . --target install
