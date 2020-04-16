@@ -34,7 +34,7 @@ for:
   - cmd: IF %PLATFORM% == x64 (set PLAT_ARCH=x86_64) ELSE (set PLAT_ARCH=i686)
   - cmd: set PATH=C:\msys64\mingw%PLAT_BITS%\bin;c:\msys64\mingw%PLAT_BITS%\lib;%PATH%
   - cmd: set LIBOPENSHOT_CACHE="%APPVEYOR_BUILD_FOLDER%\install-cache\%PLAT_ARCH%\bin\libopenshot-audio.dll"
-  - cmd: set CMAKE_EXTRA_ARGS="-DOpenShotAudio_ROOT=..\install-cache\%PLAT_ARCH%"
+  - cmd: set CMAKE_EXTRA_ARGS="-DENABLE_RUBY=0 -DOpenShotAudio_ROOT=..\install-cache\%PLAT_ARCH%"
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S mingw-w64-%PLAT_ARCH%-toolchain base-devel"
 
   install:
