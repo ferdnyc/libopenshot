@@ -35,7 +35,6 @@ for:
   - cmd: set PATH=C:\msys64\mingw%PLAT_BITS%\bin;c:\msys64\mingw%PLAT_BITS%\lib;%PATH%
   - cmd: set LIBOPENSHOT_CACHE="%APPVEYOR_BUILD_FOLDER%\install-cache\%PLAT_ARCH%\bin\libopenshot-audio.dll"
   - cmd: set CMAKE_EXTRA_ARGS="-DENABLE_RUBY=0 -DOpenShotAudio_ROOT=..\install-cache\%PLAT_ARCH%"
-  - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S mingw-w64-%PLAT_ARCH%-toolchain base-devel"
 
   install:
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
@@ -44,6 +43,7 @@ for:
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-cmake
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-doxygen
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-ffmpeg
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-imagemagick
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-zeromq
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-swig
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python3-pyqt5
