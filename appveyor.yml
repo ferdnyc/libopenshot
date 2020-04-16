@@ -1,73 +1,101 @@
-version: 1.0.{build}
-image: Visual Studio 2015
-environment:
-  APPVEYOR_RDP_PASSWORD:
-    secure: JoBWH3vCpaoh7UcfBjo57g==
-cache: build\cache-x64
-nuget:
-  account_feed: true
-  project_feed: true
+version: '{branch}-{build}'
+pull_requests:
+  do_not_increment_build_number: true
 
-install:
-- cmd: >-
-    set PATH=C:\MSYS64\mingw64\bin;C:\msys64\mingw64\lib;%PATH%
+platform:
+  - x64
+  - x86
 
-    c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S mingw-w64-x86_64-toolchain base-devel"
+image:
+  - Visual Studio 2017
+  - macos
 
-    c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S mingw64/mingw-w64-x86_64-ffmpeg mingw64/mingw-w64-x86_64-python3-pyqt5 mingw64/mingw-w64-x86_64-swig mingw64/mingw-w64-x86_64-cmake mingw64/mingw-w64-x86_64-doxygen mingw64/mingw-w64-x86_64-python3-pip mingw64/mingw-w64-x86_64-zeromq mingw64/mingw-w64-x86_64-python3-pyzmq mingw64/mingw-w64-x86_64-python3-cx_Freeze"
+# Remove the impossible build
+# (ends up being a redundant 64-bit run)
+matrix:
+  exclude:
+    - platform: x86
+      image: macos
 
-    c:\msys64\usr\bin\bash -lc "pip3 install httplib2"
+cache: install-cache
 
-    set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+for:
+# Windows (both)
+-
+  matrix:
+    except:
+      - image: macos
+  init:
+  - cmd: IF %PLATFORM% == x64 (set PLAT_BITS=64) ELSE (set PLAT_BITS=32)
+  - cmd: IF %PLATFORM% == x64 (set PLAT_ARCH=x86_64) ELSE (set PLAT_ARCH=i686)
+  - cmd: set PATH=C:\msys64\mingw%PLAT_BITS%\bin;c:\msys64\mingw%PLAT_BITS%\lib;%PATH%
+  - cmd: set LIBOPENSHOT_CACHE="%APPVEYOR_BUILD_FOLDER%\install-cache\%PLAT_ARCH%\bin\libopenshot-audio.dll"
+  - cmd: set CMAKE_EXTRA_ARGS="-DOpenShotAudio_ROOT=..\install-cache\%PLAT_ARCH%"
+  - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S mingw-w64-%PLAT_ARCH%-toolchain base-devel"
 
-    echo "DISABLED: git clone https://github.com/unittest-cpp/unittest-cpp"
+  install:
+  - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
+        mingw-w64-%PLAT_ARCH%-toolchain base-devel"
+  - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-cmake
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-doxygen
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-ffmpeg
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-zeromq
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-swig
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python3-pyqt5
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python3-pip"
+  - cmd: pip3 install httplib2
 
-    echo "DISABLED: mkdir unittest-cpp-build"
+  before_build:
+  - cmd: set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
+  - cmd: IF NOT EXIST %LIBOPENSHOT_CACHE% appveyor\build-libopenshot-audio.bat
+  - cmd: IF NOT EXIST install-cache\%PLAT_ARCH%\bin mkdir install-cache\%PLAT_ARCH%\bin
+  - cmd: IF EXIST install-cache\%PLAT_ARCH%\lib\libopenshot-audio.dll move install-cache\%PLAT_ARCH%\lib\libopenshot-audio.dll install-cache\%PLAT_ARCH%\bin\
 
-    echo "DISABLED: cd unittest-cpp-build"
+  build_script:
+  - cmd: mkdir build
+  - cmd: cd build
+  - cmd: cmake  -DCMAKE_INSTALL_PREFIX:PATH=install-%PLATFORM% -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_CXX_FLAGS_DEBUG="-Wall -Wpedantic" %CMAKE_EXTRA_ARGS% -G "MinGW Makefiles"  ..
+  - cmd: cmake --build . -- VERBOSE=1
+  #XXX: TESTS DISABLED, FAILING
+  #- cmd: cmake --build . --target test
+  - cmd: cmake --build . --target doc -- VERBOSE=1
+  - cmd: cmake --build . --target install
 
-    echo 'DISABLED: cmake -DCMAKE_INSTALL_PREFIX=..\build\install-x64 -G "MinGW Makefiles" ..\unittest-cpp'
-
-    echo "DISABLED: cmake --build . -- VERBOSE=1"
-
-    echo "DISABLED: mingw32-make install"
-
-    echo "DISABLED: cd .."
-
-    IF NOT EXIST build\cache-x64\bin\libopenshot.dll appveyor\build-libopenshot-audio.bat
-
-    IF NOT EXIST build\cache-x64\bin mkdir build\cache-x64\bin
-
-    IF EXIST build\cache-x64\lib\libopenshot-audio.dll move build\cache-x64\lib\libopenshot-audio.dll build\cache-x64\bin\
-
-# The build will pause here and wait for an RDP connection
-#before_build:
-#- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
-build_script:
-- cmd: >-
-
-    cd build
-
-    cmake -DCMAKE_INSTALL_PREFIX=install-x64 -DENABLE_TESTS=0 -DOpenShotAudio_ROOT=cache-x64 -G "MinGW Makefiles" ..
-
-    cmake --build . -- VERBOSE=1
-
-    echo "TESTS DISABLED, UnitTest++ not working: mingw32-make test"
-
-    cmake --build . --target install -- VERBOSE=1
-
-    cd ..
+# macOS
+-
+  matrix:
+    only:
+      - image: macos
+  init:
+  - sh: export PLAT_ARCH="macos-x64"
+  - sh: export LIBOPENSHOT_CACHE="${APPVEYOR_BUILD_FOLDER}/install-cache/${PLAT_ARCH}/lib/libopenshot-audio.dylib"
+  - sh: export CMAKE_EXTRA_ARGS="-DOpenShotAudio_ROOT=../install-cache/${PLAT_ARCH}"
+  install:
+  - sh: brew install
+        cmake gcc@9 libomp swig unittest-cpp rust qt
+        imagemagick libvpx x264 x265
+        fdk-aac fdk-aac-encoder ffmpeg zeromq
+  before_build:
+  - sh: mkdir build
+  - sh: if [ \! -e "${LIBOPENSHOT_CACHE}" ]; then
+          mkdir libopenshot-audio-build; pushd libopenshot-audio-build;
+          cmake -DCMAKE_INSTALL_PREFIX=../install-cache/${PLAT_ARCH}/ ../libopenshot-audio;
+          cmake --build . -- VERBOSE=1;
+          cmake --build . --target install -- VERBOSE=1;
+          popd;
+        fi
+  - sh: git clone https://github.com/zeromq/cppzmq;
+        cp cppzmq/zmq*.hpp build/;
+        export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS}
+        -DCMAKE_INCLUDE_CURRENT_DIR:BOOL=TRUE"
+  - sh: eval $(brew --env|grep -i cmake);
+        export CMAKE_EXTRA_ARGS="${CMAKE_EXTRA_ARGS} -DFFmpeg_ROOT=$(brew --prefix ffmpeg)"
+  build_script:
+  - sh: mkdir -p build; cd build;
+  - sh: cmake -DCMAKE_INSTALL_PREFIX:PATH=install-${PLAT_ARCH} -DCMAKE_BUILD_TYPE:STRING="Debug" -DCMAKE_CXX_FLAGS_DEBUG="-Wall -Wpedantic" ${CMAKE_EXTRA_ARGS} ../
+  - sh: cmake --build . -- VERBOSE=1
+  - sh: cmake --build . --target test
+  - sh: cmake --build . --target install
 
 test: off
-
-artifacts:
-- path: build/install-x64
-  name: libopenshot-install
-deploy:
-- provider: NuGet
-  api_key:
-    secure: gbPd2Mk9DYcXyoURZhb2rWD7dK797HlDE34z5pv3YYNa2AqTilrFw/uoOzMhANQx
-  username:
-    secure: 1REhby0tYwDyTOSnedXePw==
-
