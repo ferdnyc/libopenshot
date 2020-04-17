@@ -66,6 +66,7 @@ for:
       - image: macos
   init:
   - sh: export PLAT_ARCH="macos-x64"
+  - sh: export Qt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5
   install:
   - sh: brew install
         gcc@9 libomp swig unittest-cpp rust qt
