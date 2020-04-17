@@ -216,3 +216,23 @@ feature_summary(WHAT ALL
     INCLUDE_QUIET_PACKAGES
     FATAL_ON_MISSING_REQUIRED_PACKAGES
     DESCRIPTION "Displaying feature summary\n\nBuild configuration:")
+
+###
+### CPack packaging metadata
+###
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION_FULL})
+set(CPACK_PACKAGE_HOMEPAGE_URL ${PROJECT_URL})
+if(MINGW)
+	set(CPACK_GENERATOR "NuGet")
+  set(CPACK_PACKAGE_DIRECTORY ${CMAKE_INSTALL_PREFIX})
+endif()
+if(UNIX AND NOT APPLE)
+	set(CPACK_GENERATOR "DEB")
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER ${PROJECT_MAINTAINER}) #required
+endif()
+#if(UNIX AND APPLE)
+#	set(CPACK_GENERATOR "DragNDrop")
+#endif()
+
+include(CPack)

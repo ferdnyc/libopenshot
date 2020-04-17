@@ -77,10 +77,6 @@ if (ImageMagick_FOUND)
 
 endif()
 
-################# LIBOPENSHOT-AUDIO ###################
-# Find JUCE-based openshot Audio libraries
-find_package(OpenShotAudio 0.2.0 REQUIRED)
-
 ################# BLACKMAGIC DECKLINK ###################
 # Find BlackMagic DeckLinkAPI libraries
 if (ENABLE_BLACKMAGIC)
