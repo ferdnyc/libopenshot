@@ -94,10 +94,7 @@ if (ENABLE_BLACKMAGIC)
 
 endif()
 
-###############  PROFILING  #################
-#set(PROFILER "/usr/lib/libprofiler.so.0.3.2")
-#set(PROFILER "/usr/lib/libtcmalloc.so.4")
-
+############ INCLUDE WHAT YOU USE ##################
 if(CMAKE_VERSION VERSION_LESS 3.3)
   # IWYU wasn't supported internally in 3.2
   set(ENABLE_IWYU FALSE)
@@ -226,13 +223,28 @@ endif()
 # Location of our includes, both internally and when installed
 target_include_directories(openshot
   PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_BINARY_DIR}/include
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libopenshot>)
 
+################# OpenShotAudio ###################
+# Find JUCE-based openshot Audio libraries
+find_package(OpenShotAudio 0.2.0 REQUIRED)
+
+# Include Juce headers (needed for compile)
+if (NOT TARGET OpenShot::Audio)
+  add_library(OpenShotAudio_TARGET IMPORTED SHARED)
+  add_library(OpenShot::Audio ALIAS OpenShotAudio_TARGET)
+  target_include_directories(OpenShotAudio_TARGET INTERFACE
+   ${LIBOPENSHOT_AUDIO_INCLUDE_DIRS})
+  target_link_libraries(OpenShotAudio_TARGET INTERFACE
+   ${LIBOPENSHOT_AUDIO_LIBRARIES})
+endif()
+
+target_link_libraries(openshot PUBLIC OpenShot::Audio)
 
 ################### JSONCPP #####################
 # Include jsoncpp headers (needed for JSON parsing)
@@ -262,7 +274,7 @@ if (jsoncpp_FOUND)
   set_package_properties(jsoncpp PROPERTIES TYPE REQUIRED)
 endif ()
 
-# If we found any usable JsonCpp, use it. Otherwise, bail.
+# If we found any usable jsoncpp, use it. Otherwise, bail.
 if (TARGET jsoncpp_lib)
   target_link_libraries(openshot PUBLIC jsoncpp_lib)
 endif ()
@@ -350,12 +362,9 @@ if (TARGET RESVG::resvg)
   set(CMAKE_SWIG_FLAGS "-DUSE_RESVG=1")
 endif()
 
-###############  LINK LIBRARY  #################
+#
 # Link remaining dependency libraries
-target_link_libraries(openshot PUBLIC
-	${LIBOPENSHOT_AUDIO_LIBRARIES}
-  ${PROFILER})
-
+#
 if(ImageMagick_FOUND)
   target_link_libraries(openshot PUBLIC ${ImageMagick_LIBRARIES})
 endif()

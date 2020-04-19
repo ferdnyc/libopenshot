@@ -1,0 +1,22 @@
+#
+# openshot.py deprecation wrapper
+#
+import warnings
+import sys
+import os
+
+warnings.warn(
+    'Importing openshot as a top-level module is deprecated. Please update '
+    'your code to import from the libopenshot package, e.g.:\n'
+    '\n'
+    'from libopenshot import openshot\n'
+    '',
+    DeprecationWarning
+)
+
+try:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from libopenshot.openshot import *
+except ImportError:
+    raise
+

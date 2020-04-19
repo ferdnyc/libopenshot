@@ -1,10 +1,10 @@
-/* ####################### src/openshot.i (libopenshot) ########################
-# @brief SWIG configuration for libopenshot (to generate Ruby SWIG bindings)
+/* ################### src/bindings/common.i (libopenshot) ####################
+# @brief SWIG configuration for libopenshot (to generate SWIG bindings)
 # @author Jonathan Thomas <jonathan@openshot.org>
 #
 # @section LICENSE
 #
-# Copyright (c) 2008-2019 OpenShot Studios, LLC
+# Copyright (c) 2008-2020 OpenShot Studios, LLC
 # <http://www.openshotstudios.com/>. This file is part of
 # OpenShot Library (libopenshot), an open-source project dedicated to
 # delivering high quality video editing and animation solutions to the
@@ -24,8 +24,7 @@
 # along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
 ################################################################################ */
 
-
-%module openshot
+%module (package="libopenshot") openshot
 
 /* Suppress warnings about ignored operator= */
 %warnfilter(362);
@@ -38,37 +37,37 @@
 
 /* Include various SWIG helpers */
 %include "typemaps.i"
-%include "std_string.i"
+%include "stl.i"
 %include "std_list.i"
-%include "std_vector.i"
-%include "std_map.i"
+%include <stdint.i>
 
 /* Unhandled STL Exception Handling */
 %include <std_except.i>
 
-namespace std {
-  template<class T> class shared_ptr {
-  public:
-    T *operator->();
-  };
-}
+/* Include shared pointer code */
+%include <std_shared_ptr.i>
 
 /* Mark these classes as shared_ptr classes */
+%shared_ptr(juce::AudioSampleBuffer)
+%shared_ptr(openshot::Frame)
+%shared_ptr(QImage)
+
 #ifdef USE_IMAGEMAGICK
-	%template(SPtrImage) std::shared_ptr<Magick::Image>;
+	%shared_ptr(Magick::Image)
 #endif
-%template(SPtrAudioBuffer) std::shared_ptr<juce::AudioSampleBuffer>;
-%template(SPtrOpenFrame) std::shared_ptr<openshot::Frame>;
+
 
 %{
-/* Ruby and FFmpeg define competing RSHIFT macros,
- * so we move Ruby's out of the way for now. We'll
- * restore it after dealing with FFmpeg's
- */
-#ifdef RSHIFT
-  #define RB_RSHIFT(a, b) RSHIFT(a, b)
-  #undef RSHIFT
-#endif
+#ifdef SWIGRUBY
+  /* Ruby and FFmpeg define competing RSHIFT macros,
+   * so we move Ruby's out of the way for now. We'll
+   * restore it after dealing with FFmpeg's
+   */
+  #ifdef RSHIFT
+    #define RB_RSHIFT(a, b) RSHIFT(a, b)
+    #undef RSHIFT
+  #endif
+#endif // SWIGRUBY
 #include "OpenShotVersion.h"
 #include "ReaderBase.h"
 #include "WriterBase.h"
@@ -107,15 +106,18 @@ namespace std {
 #include "ZmqLogger.h"
 #include "AudioDeviceInfo.h"
 
-/* Move FFmpeg's RSHIFT to FF_RSHIFT, if present */
-#ifdef RSHIFT
-  #define FF_RSHIFT(a, b) RSHIFT(a, b)
-  #undef RSHIFT
-#endif
-/* And restore Ruby's RSHIFT, if we captured it */
-#ifdef RB_RSHIFT
-  #define RSHIFT(a, b) RB_RSHIFT(a, b)
-#endif
+#ifdef SWIGRUBY
+  /* Move FFmpeg's RSHIFT to FF_RSHIFT, if present */
+  #ifdef RSHIFT
+    #define FF_RSHIFT(a, b) RSHIFT(a, b)
+    #undef RSHIFT
+  #endif
+  /* And restore Ruby's RSHIFT, if we captured it */
+  #ifdef RB_RSHIFT
+    #define RSHIFT(a, b) RB_RSHIFT(a, b)
+  #endif
+#endif // SWIGRUBY
+
 %}
 
 #ifdef USE_BLACKMAGIC
@@ -133,7 +135,73 @@ namespace std {
 	%}
 #endif
 
+/* Generic language independent exception handler. */
+%include "exception.i"
+%exception {
+  try {
+    $action
+  }
+  catch (std::exception &e) {
+    SWIG_exception_fail(SWIG_RuntimeError, e.what());
+  }
+}
+
+#ifdef SWIGPYTHON
+  /* Instantiate the required template specializations */
+  %template() std::map<std::string, int>;
+
+  /* Make openshot.Fraction more Pythonic */
+  %extend openshot::Fraction {
+    %{
+      #include <sstream>
+      #include <map>
+    %}
+    double __float__() {
+      return $self->ToDouble();
+    }
+    int __int__() {
+      return $self->ToInt();
+    }
+    std::map<std::string, int> GetMap() {
+      std::map<std::string, int> map1;
+      map1.insert({"num", $self->num});
+      map1.insert({"den", $self->den});
+      return map1;
+    }
+    std::string __repr__() {
+      std::ostringstream result;
+      result << $self->num << ":" << $self->den;
+      return result.str();
+    }
+  }
+#endif // SWIG_PYTHON
+
+%extend openshot::OpenShotVersion {
+  // Give the struct a string representation
+  const std::string __str__() {
+    return std::string(OPENSHOT_VERSION_FULL);
+  }
+  // And a repr for interactive use
+  const std::string __repr__() {
+    std::ostringstream result;
+    result << "OpenShotVersion('" << OPENSHOT_VERSION_FULL << "')";
+    return result.str();
+  }
+}
+
 %include "OpenShotVersion.h"
+
+#ifdef SWIGRUBY
+  /* Ruby and FFmpeg define competing RSHIFT macros,
+   * so we move Ruby's out of the way for now. We'll
+   * restore it after dealing with FFmpeg's
+   */
+  #ifdef RSHIFT
+    #define RB_RSHIFT(a, b) RSHIFT(a, b)
+    #undef RSHIFT
+  #endif
+#endif // SWIGRUBY
+
 %include "ReaderBase.h"
 %include "WriterBase.h"
 %include "CacheBase.h"
@@ -146,39 +214,14 @@ namespace std {
 %include "Clip.h"
 %include "Coordinate.h"
 %include "Color.h"
-#ifdef USE_BLACKMAGIC
-	%include "DecklinkReader.h"
-	%include "DecklinkWriter.h"
-#endif
 %include "DummyReader.h"
 %include "EffectBase.h"
 %include "Effects.h"
 %include "EffectInfo.h"
 %include "Enums.h"
 %include "Exceptions.h"
-
-/* Ruby and FFmpeg define competing RSHIFT macros,
- * so we move Ruby's out of the way for now. We'll
- * restore it after dealing with FFmpeg's
- */
-#ifdef RSHIFT
-  #define RB_RSHIFT(a, b) RSHIFT(a, b)
-  #undef RSHIFT
-#endif
-
 %include "FFmpegReader.h"
 %include "FFmpegWriter.h"
-
-/* Move FFmpeg's RSHIFT to FF_RSHIFT, if present */
-#ifdef RSHIFT
-  #define FF_RSHIFT(a, b) RSHIFT(a, b)
-  #undef RSHIFT
-#endif
-/* And restore Ruby's RSHIFT, if we captured it */
-#ifdef RB_RSHIFT
-  #define RSHIFT(a, b) RB_RSHIFT(a, b)
-#endif
-
 %include "Fraction.h"
 %include "Frame.h"
 %include "FrameMapper.h"
@@ -196,12 +239,28 @@ namespace std {
 %include "ZmqLogger.h"
 %include "AudioDeviceInfo.h"
 
+#ifdef USE_BLACKMAGIC
+	%include "DecklinkReader.h"
+	%include "DecklinkWriter.h"
+#endif
+
 #ifdef USE_IMAGEMAGICK
 	%include "ImageReader.h"
 	%include "ImageWriter.h"
 	%include "TextReader.h"
 #endif
 
+#ifdef SWIGRUBY
+  /* Move FFmpeg's RSHIFT to FF_RSHIFT, if present */
+  #ifdef RSHIFT
+    #define FF_RSHIFT(a, b) RSHIFT(a, b)
+    #undef RSHIFT
+  #endif
+  /* And restore Ruby's RSHIFT, if we captured it */
+  #ifdef RB_RSHIFT
+    #define RSHIFT(a, b) RB_RSHIFT(a, b)
+  #endif
+#endif // SWIGRUBY
 
 /* Effects */
 %include "effects/Bars.h"

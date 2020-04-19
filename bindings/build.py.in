@@ -1,0 +1,92 @@
+#!/usr/bin/python3
+import os
+import sys
+import setuptools
+
+cmake_includes="""$<TARGET_PROPERTY:openshot,INCLUDE_DIRECTORIES>"""
+cmake_compile_opts="""$<TARGET_PROPERTY:openshot,COMPILE_OPTIONS>"""
+cmake_link_opts="""$<TARGET_PROPERTY:openshot,LINK_OPTIONS>"""
+
+openshot_module = Extension(
+    '_openshot',
+    sources=['@SWIG_GENERATED_SOURCE_PATH@'],
+    language="c++",
+    include_dirs=[
+        '/home/ferd/rpmbuild/REPOS/libopenshot/include',
+        '/home/ferd/rpmbuild/REPOS/libopenshot/build/include',
+        '/usr/include/ImageMagick-7',
+        '/usr/include/ffmpeg',
+        '/usr/include/libopenshot-audio',
+        '/home/ferd/rpmbuild/REPOS/libopenshot/src/../thirdparty/jsoncpp',
+        '/usr/include/qt5',
+        '/usr/include/qt5/QtWidgets',
+        '/usr/include/qt5/QtGui',
+        '/usr/include/qt5/QtCore',
+        '/usr/lib64/qt5/mkspecs/linux-g++',
+        '/usr/include/qt5/QtMultimedia',
+        '/usr/include/qt5/QtNetwork',
+        '/usr/include/qt5/QtMultimediaWidgets'
+    ],
+    libraries=[
+        'python3.7m',
+        'openshot-audio',
+        'avcodec',
+        'avdevice',
+        'avformat',
+        'avfilter',
+        'avutil',
+        'postproc',
+        'swscale',
+        'swresample',
+        'avresample',
+        'Qt5MultimediaWidgets',
+        'Qt5Widgets',
+        'Qt5Multimedia',
+        'Qt5Gui',
+        'Qt5Network',
+        'Qt5Core',
+        'zmq',
+        'Magick++-7.Q16HDRI',
+        'MagickWand-7.Q16HDRI',
+        'MagickCore-7.Q16HDRI'
+    ],
+    extra_objects=['../../libopenshot.so.0.2.3'],
+    swig_opts=[
+        '-I/home/ferd/rpmbuild/REPOS/libopenshot/include',
+        '-I/home/ferd/rpmbuild/REPOS/libopenshot/build/include',
+        '-I/usr/include/ImageMagick-7',
+        '-I/usr/include/ffmpeg',
+        '-I/usr/include/libopenshot-audio',
+        '-I/home/ferd/rpmbuild/REPOS/libopenshot/src/../thirdparty/jsoncpp',
+        '-I/usr/include/qt5',
+        '-I/usr/include/qt5/QtWidgets',
+        '-I/usr/include/qt5/QtGui',
+        '-I/usr/include/qt5/QtCore',
+        '-I/usr/lib64/qt5/mkspecs/linux-g++',
+        '-I/usr/include/qt5/QtMultimedia',
+        '-I/usr/include/qt5/QtNetwork',
+        '-I/usr/include/qt5/QtMultimediaWidgets'
+    ],
+    extra_compile_args=[
+        '-Wno-unused-variable',
+        '-Wno-unused-function',
+        '-Wno-deprecated-copy',
+        '-Wno-class-memaccess',
+        '-Wno-cast-function-type',
+        '-Wno-unused-parameter',
+        '-Wno-catch-value',
+        '-Wno-sign-compare',
+        '-Wno-ignored-qualifiers'
+    ],
+    extra_link_args=[
+        '-fopenmp'
+    ]
+)
+
+dist = setuptools.setup(
+    name='@PROJECT_NAME@',
+    version='@PROJECT_VERSION_FULL@',
+    description='Python bindings for libopenshot',
+    ext_modules=[openshot_module],
+    py_modules=["openshot"]
+)

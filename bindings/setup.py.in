@@ -1,0 +1,39 @@
+#!/usr/bin/python3
+import os
+import sys
+import setuptools
+
+dist = setuptools.setup(
+    name='libopenshot',
+    version='@PROJECT_VERSION_FULL@',
+    description='Python bindings for libopenshot',
+    url="@PROJECT_URL@",
+    author="@PROJECT_AUTHOR@",
+    author_email="@PROJECT_AUTHOR_EMAIL@",
+    maintainer="@PROJECT_MAINTAINER@",
+    maintainer_email="@PROJECT_MAINTAINER_EMAIL@",
+    license='GPLv3+',
+    classifiers=[
+        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'Intended Audience :: Developers',
+        'Environment :: Console',
+        'Development Status :: 5 - Production/Stable',
+        'Natural Language :: English',
+        'Operating System :: MacOS :: MacOS X',
+        'Operating System :: POSIX :: Linux',
+        'Operating System :: Microsoft :: Windows',
+        'Programming Language :: C++',
+        'Programming Language :: Python :: 3 :: Only',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Multimedia :: Video',
+        'Topic :: Multimedia :: Sound/Audio',
+    ],
+    packages=setuptools.find_packages(),
+    package_data={
+        # Include the SWIG shared library object
+        "libopenshot": ["*.so", "*.dll", "*.dylib"],
+    },
+    include_package_data=True,
+    zip_safe=False,
+    py_modules=["openshot"]
+)
