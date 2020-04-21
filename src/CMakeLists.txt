@@ -29,12 +29,22 @@ include(FeatureSummary)
 
 include(GNUInstallDirs)
 
-################ WINDOWS ##################
+###
+### Configure Version header
+###
+configure_file(OpenShotVersion.h.in OpenShotVersion.h @ONLY)
+# We'll want that installed later
+install(FILES OpenShotVersion.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+
+###
+### Platform-specific configs
+###
 # Set some compiler options for Windows
 # required for libopenshot-audio headers
 if (WIN32)
-	add_definitions( -DIGNORE_JUCE_HYPOT=1 )
-	set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -include cmath")
+  add_definitions( -DIGNORE_JUCE_HYPOT=1 )
+  set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -include cmath")
 endif()
 
 if (APPLE)
@@ -103,17 +113,17 @@ if(CMAKE_VERSION VERSION_LESS 3.3)
 endif()
 
 if(ENABLE_IWYU)
-	find_program(IWYU_PATH NAMES "iwyu"
-		DOC "include-what-you-use source code scanner executable")
-	if(IWYU_PATH)
-		if(IWYU_OPTS)
-			separate_arguments(IWYU_OPTS)
-			list(APPEND _iwyu_opts "-Xiwyu" ${IWYU_OPTS})
-		endif()
-		set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PATH} ${_iwyu_opts})
-	else()
-		set(ENABLE_IWYU FALSE)
-	endif()
+  find_program(IWYU_PATH NAMES "iwyu"
+    DOC "include-what-you-use source code scanner executable")
+  if(IWYU_PATH)
+    if(IWYU_OPTS)
+      separate_arguments(IWYU_OPTS)
+      list(APPEND _iwyu_opts "-Xiwyu" ${IWYU_OPTS})
+    endif()
+    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PATH} ${_iwyu_opts})
+  else()
+    set(ENABLE_IWYU FALSE)
+  endif()
 endif()
 add_feature_info("IWYU (include-what-you-use)" ENABLE_IWYU "Scan all source files with 'iwyu'")
 
@@ -143,7 +153,7 @@ set(OPENSHOT_SOURCES
   Fraction.cpp
   Frame.cpp
   FrameMapper.cpp
-	Json.cpp
+  Json.cpp
   KeyFrame.cpp
   OpenShotVersion.cpp
   ZmqLogger.cpp
@@ -223,11 +233,11 @@ endif()
 # Location of our includes, both internally and when installed
 target_include_directories(openshot_obj
   PRIVATE
-	  ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libopenshot>)
 
 ################# OpenShotAudio ###################
@@ -412,13 +422,13 @@ endif()
 
 ############### CPACK PACKAGING ##############
 if(MINGW)
-	set(CPACK_GENERATOR "NSIS")
+  set(CPACK_GENERATOR "NSIS")
 endif()
 if(UNIX AND NOT APPLE)
-	set(CPACK_GENERATOR "DEB")
+  set(CPACK_GENERATOR "DEB")
 endif()
 #if(UNIX AND APPLE)
-#	set(CPACK_GENERATOR "DragNDrop")
+#  set(CPACK_GENERATOR "DragNDrop")
 #endif()
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jonathan Thomas") #required
 
