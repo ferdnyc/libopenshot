@@ -164,12 +164,6 @@ if(ENABLE_RUBY)
   set(RUBY_ENABLED ON)
 endif()
 
-### Configure Version.h header
-configure_file(include/OpenShotVersion.h.in include/OpenShotVersion.h @ONLY)
-# We'll want that installed later
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/OpenShotVersion.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
-
 # Work around a GCC < 9 bug with handling of _Pragma() in macros
 # See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
 if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") AND
@@ -225,6 +219,13 @@ if(RUBY_ENABLED OR PYTHON_ENABLED)
   add_subdirectory(bindings)
 endif()
 
+########## Configure Version.h header ##############
+configure_file(include/OpenShotVersion.h.in include/OpenShotVersion.h @ONLY)
+# We'll want that installed later
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/OpenShotVersion.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+
+################### DOCUMENTATION ###################
 if(PYTHON_CREATE_PACKAGE)
   add_subdirectory(packaging/python)
 endif()
