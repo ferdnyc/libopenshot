@@ -98,10 +98,10 @@ include(CMakeDependentOption)
 # Configurable build settings for libopenshot
 
 # What to build
-option(BUILD_INSTALLABLE "Build an installable shared library" ON)
-option(BUILD_BUNDLED "Build lib for direct inclusion with bindings" OFF)
+option(ENABLE_INSTALLABLE "Build an installable shared library" ON)
+option(ENABLE_BUNDLED "Build lib for direct inclusion with bindings" OFF)
+option(ENABLE_AUDIO_LIB "Build audio lib from submodule" OFF)
 option(ENABLE_PYTHON "Generate Python bindings using SWIG" ON)
-option(PYTHON_BUILD_PACKAGE "Package bindings using setuptools" ON)
 option(ENABLE_RUBY "Generate Ruby bindings using SWIG" ON)
 
 # What to include
@@ -114,17 +114,33 @@ option(ENABLE_TESTS "Build unit tests (requires UnitTest++)" ON)
 option(ENABLE_DOCS "Build API documentation (requires Doxygen)" ON)
 
 ###
-### Apply conditionals to modify build parameters
+### Create dependent options and process conditionals
 ###
 
+# Python package requires Python (duh)
+cmake_dependent_option(PYTHON_CREATE_PACKAGE
+  "Package bindings using setuptools"
+  ON "ENABLE_PYTHON" # default on if enabled
+  OFF
+)
 # Bundling option (EXPERIMENTAL) requires Python bindings and packaging enabled
 cmake_dependent_option(PYTHON_BUNDLE_LIBS
   "Incorporate libopenshot directly into Python package"
-  OFF "ENABLE_PYTHON;PYTHON_BUILD_PACKAGE" # default OFF if conditions TRUE
-  OFF                                      # else forced OFF unconditionally (disabled)
+  # default OFF even if conditions TRUE
+  OFF "ENABLE_PYTHON;PYTHON_CREATE_PACKAGE"
+  OFF  # else forced OFF unconditionally (disabled)
+)
+# If bundling enabled, default to including libopenshot-audio
+cmake_dependent_option(PYTHON_BUNDLE_AUDIO_LIB
+  "Integrate audio lib into bundled build"
+  ON "PYTHON_BUNDLE_LIBS"
+  OFF
 )
 if (PYTHON_BUNDLE_LIBS)
-  set(BUILD_BUNDLED ON)
+  set(ENABLE_BUNDLED ON)
+endif()
+if (PYTHON_BUNDLE_AUDIO_LIB)
+  set(ENABLE_AUDIO_LIB ON)
 endif()
 
 # Legacy commandline override
@@ -166,10 +182,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-IF (WIN32)
-	SET_PROPERTY(GLOBAL PROPERTY WIN32 "WIN32")
-ENDIF(WIN32)
-
 ############## Code Coverage #########################
 if (DISABLE_TESTS AND ENABLE_COVERAGE)
   message(WARNING "ENABLE_COVERAGE requires tests, overriding DISABLE_TESTS")
@@ -196,13 +208,15 @@ if(NOT DEFINED CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
-### Set up include paths
-find_package(OpenShotAudio 0.2.0 REQUIRED)
-include_directories(${LIBOPENSHOT_AUDIO_INCLUDE_DIRS})
-
 ###
 ### SUBDIRECTORIES
 ###
+if (ENABLE_AUDIO_LIB)
+  add_subdirectory(libopenshot-audio)
+else()
+  find_package(OpenShotAudio 0.2.0 REQUIRED)
+endif()
+
 add_subdirectory(src)
 add_subdirectory(examples)
 
@@ -211,22 +225,28 @@ if(RUBY_ENABLED OR PYTHON_ENABLED)
   add_subdirectory(bindings)
 endif()
 
+if(PYTHON_CREATE_PACKAGE)
+  add_subdirectory(packaging/python)
+endif()
+
 ###
 ### DOCUMENTATION
 ###
 # Find Doxygen (used for documentation)
 set(DOCS_ENABLED FALSE) # Only set true if Doxygen is found and configured
 if (ENABLE_DOCS)
+  set(DOXYGEN_TARGET_NAME "doxygen-libopenshot")
+  set(DOXYGEN_DOC_TARGET_NAME "libopenshot-docs")
   include(UseDoxygen)
 
   # Doxygen was found
-  if (TARGET doc)
+  if (TARGET ${DOXYGEN_DOC_TARGET_NAME})
   	message(STATUS "Doxygen found, documentation target enabled")
   	set(DOCS_ENABLED TRUE)
 
     # Install docs, if the user builds them with `make doc`
     install(CODE "MESSAGE(\"Checking for documentation files to install...\")")
-    install(CODE "MESSAGE(\"(Compile with 'make doc' command, requires Doxygen)\")")
+    install(CODE "MESSAGE(\"(Compile with 'make ${DOXYGEN_DOC_TARGET_NAME}' command, requires Doxygen)\")")
 
     install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html/
             DESTINATION ${CMAKE_INSTALL_DOCDIR}/API
@@ -234,7 +254,7 @@ if (ENABLE_DOCS)
             OPTIONAL )    # No error if the docs aren't found
   endif()
 endif()
-add_feature_info("Documentation" DOCS_ENABLED "Build API documentation with 'make doc'")
+add_feature_info("Documentation" DOCS_ENABLED "Build API documentation with 'make ${DOXYGEN_DOC_TARGET_NAME}'")
 
 ###
 ### Unit Tests
@@ -263,33 +283,6 @@ feature_summary(WHAT ALL
     INCLUDE_QUIET_PACKAGES
     FATAL_ON_MISSING_REQUIRED_PACKAGES
     DESCRIPTION "Displaying feature summary\n\nBuild configuration:")
-
-###
-### Python packaging
-###
-
-if(PYTHON_BUILD_PACKAGE)
-  # file(GENERATE
-  #   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python/libopenshot/__init__.py
-  #   INPUT ${PROJECT_SOURCE_DIR}/bindings/libopenshot_init.py.in
-  # )
-  # file(GENERATE
-  #   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python/openshot/__init__.py
-  #   INPUT ${PROJECT_SOURCE_DIR}/bindings/openshot_init.py.in
-  # )
-
-  ### Create packaging files
-  configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/bindings/setup.py.in
-    ${CMAKE_CURRENT_BINARY_DIR}/setup.py
-  )
-
-  # install(CODE "configure_file(\
-  #   ${PROJECT_SOURCE_DIR}/bindings/setup.py.in\
-  #   ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)"
-  #   COMPONENT PyPackage EXCLUDE_FROM_ALL
-  # )
-endif()
 
 ###
 ### CPack packaging metadata

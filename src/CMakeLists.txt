@@ -233,22 +233,6 @@ target_include_directories(openshot_obj
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libopenshot>)
 
-################# OpenShotAudio ###################
-# Find JUCE-based openshot Audio libraries
-find_package(OpenShotAudio 0.2.0 REQUIRED)
-
-# Include Juce headers (needed for compile)
-if (NOT TARGET OpenShot::Audio)
-  add_library(OpenShotAudio_TARGET INTERFACE)
-  add_library(OpenShot::Audio ALIAS OpenShotAudio_TARGET)
-  target_include_directories(OpenShotAudio_TARGET INTERFACE
-   ${LIBOPENSHOT_AUDIO_INCLUDE_DIRS})
-  target_link_libraries(OpenShotAudio_TARGET INTERFACE
-   ${LIBOPENSHOT_AUDIO_LIBRARIES})
-endif()
-
-target_link_libraries(openshot_obj PUBLIC OpenShot::Audio)
-
 ################### JSONCPP #####################
 # Include jsoncpp headers (needed for JSON parsing)
 if (USE_SYSTEM_JSONCPP)
@@ -382,6 +366,34 @@ if(WIN32)
 endif()
 
 ###
+### OpenShotAudio
+###
+# Find external JUCE-based OpenShot Audio library
+if(NOT ENABLE_AUDIO_LIB)
+  find_package(OpenShotAudio 0.2.0 REQUIRED)
+
+  # Create target for libopenshot-audio
+  if (NOT TARGET OpenShot::Audio)
+    add_library(OpenShotAudio_TARGET INTERFACE)
+    add_library(OpenShot::Audio ALIAS OpenShotAudio_TARGET)
+    target_include_directories(OpenShotAudio_TARGET INTERFACE
+      ${OpenShotAudio_INCLUDE_DIR})
+    target_link_libraries(OpenShotAudio_TARGET INTERFACE
+      ${OpenShotAudio_LIBRARY})
+  endif()
+else()
+  target_include_directories(openshot_obj
+    PRIVATE
+      $<TARGET_PROPERTY:openshot-audio,INCLUDE_DIRECTORIES>
+    PUBLIC
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libopenshot-audio/include>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libopenshot-audio/JuceLibraryCode/modules>
+      $<INSTALL_INTERFACE:include/libopenshot-audio>
+  )
+endif()
+
+
+###
 ### libopenshot shared library
 ###
 if(BUILD_INSTALLABLE)
@@ -397,6 +409,12 @@ if(BUILD_INSTALLABLE)
 
   # Link with object target
   target_link_libraries(openshot PUBLIC openshot_obj)
+
+  if(ENABLE_AUDIO_LIB)
+    target_link_libraries(openshot PUBLIC openshot-audio)
+  else()
+    target_link_libraries(openshot PUBLIC OpenShot::Audio)
+  endif()
 
 	# Install primary library
 	install(TARGETS openshot

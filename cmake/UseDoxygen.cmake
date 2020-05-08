@@ -56,15 +56,15 @@
 #  DOXYFILE_EXTRA_SOURCES - Additional source diretories/files for Doxygen to scan.
 #  	The Paths should be in double quotes and separated by space. e.g.:
 #  	 "${CMAKE_CURRENT_BINARY_DIR}/foo.c" "${CMAKE_CURRENT_BINARY_DIR}/bar/"
-#  
+#
 #  DOXYFILE_OUTPUT_DIR - Path where the Doxygen output is stored.
 #  	Defaults to "${CMAKE_CURRENT_BINARY_DIR}/doc".
-#  
+#
 #  DOXYFILE_LATEX - ON/OFF; Set to "ON" if you want the LaTeX documentation
 #  	to be built.
 #  DOXYFILE_LATEX_DIR - Directory relative to DOXYFILE_OUTPUT_DIR where
 #  	the Doxygen LaTeX output is stored. Defaults to "latex".
-#  
+#
 #  DOXYFILE_HTML_DIR - Directory relative to DOXYFILE_OUTPUT_DIR where
 #  	the Doxygen html output is stored. Defaults to "html".
 #
@@ -81,6 +81,11 @@ macro(usedoxygen_set_default name value type docstring)
 		set("${name}" "${value}" CACHE "${type}" "${docstring}")
 	endif()
 endmacro()
+
+usedoxygen_set_default(DOXYGEN_TARGET_NAME "doxygen"
+	STRING "Name of doxygen target (to avoid conflicts)")
+usedoxygen_set_default(DOXYGEN_DOC_TARGET_NAME "doc"
+	STRING "Name of target used to generate docs")
 
 find_package(Doxygen)
 
@@ -118,14 +123,14 @@ if(DOXYGEN_FOUND AND DOXYFILE_IN_FOUND)
 		set(DOXYFILE_DOT "YES")
 	endif()
 
-	set_property(DIRECTORY 
+	set_property(DIRECTORY
 		APPEND PROPERTY
 		ADDITIONAL_MAKE_CLEAN_FILES
 		"${DOXYFILE_OUTPUT_DIR}/${DOXYFILE_HTML_DIR}")
 
-	add_custom_target(doxygen
+	add_custom_target(${DOXYGEN_TARGET_NAME}
 		COMMAND "${DOXYGEN_EXECUTABLE}"
-			"${DOXYFILE}" 
+			"${DOXYFILE}"
 		COMMENT "Writing documentation to ${DOXYFILE_OUTPUT_DIR}..."
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -146,7 +151,7 @@ if(DOXYGEN_FOUND AND DOXYFILE_IN_FOUND)
 				set(DOXYFILE_PDFLATEX "YES")
 			endif()
 
-			add_custom_command(TARGET doxygen
+			add_custom_command(TARGET ${DOXYGEN_TARGET_NAME}
 				POST_BUILD
 				COMMAND "${DOXYFILE_MAKE}"
 				COMMENT	"Running LaTeX for Doxygen documentation in ${DOXYFILE_OUTPUT_DIR}/${DOXYFILE_LATEX_DIR}..."
@@ -161,12 +166,12 @@ if(DOXYGEN_FOUND AND DOXYFILE_IN_FOUND)
 
 	configure_file("${DOXYFILE_IN}" "${DOXYFILE}" @ONLY)
 
-	if(TARGET doc)
-		get_target_property(DOC_TARGET doc TYPE)
+	if(TARGET ${DOXYGEN_DOC_TARGET_NAME})
+		get_target_property(DOC_TARGET ${DOXYGEN_DOC_TARGET_NAME} TYPE)
 	endif()
 	if(NOT DOC_TARGET)
-		add_custom_target(doc)
+		add_custom_target(${DOXYGEN_DOC_TARGET_NAME})
 	endif()
 
-	add_dependencies(doc doxygen)
+	add_dependencies(${DOXYGEN_DOC_TARGET_NAME} ${DOXYGEN_TARGET_NAME})
 endif()

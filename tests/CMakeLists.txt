@@ -85,11 +85,14 @@ endif()
 
 ################# LIBOPENSHOT-AUDIO ###################
 # Find JUCE-based openshot Audio libraries
-find_package(OpenShotAudio 0.2.0 REQUIRED)
+if(NOT ENABLE_AUDIO_LIB)
+	find_package(OpenShotAudio 0.2.0 REQUIRED)
 
-# Include Juce headers (needed for compile)
-include_directories(${LIBOPENSHOT_AUDIO_INCLUDE_DIRS})
+	# Include Juce headers (needed for compile)
+	include_directories(${OpenShotAudio_INCLUDE_DIRS})
+endif()
 
+include_directories($<TARGET_PROPERTY:openshot_obj,INCLUDE_DIRECTORIES>)
 
 ################# BLACKMAGIC DECKLINK ###################
 if(ENABLE_BLACKMAGIC)
@@ -128,8 +131,25 @@ add_executable(openshot-test
   tests.cpp
   ${OPENSHOT_TEST_FILES} )
 
+set_property(TARGET openshot-test
+	PROPERTY
+	  POSITION_INDEPENDENT_CODE TRUE
+)
+
 # Link libraries to the new executable
-target_link_libraries(openshot-test openshot ${UnitTest++_LIBRARIES})
+target_link_libraries(openshot-test ${UnitTest++_LIBRARIES})
+
+if(BUILD_INSTALLABLE)
+	target_link_libraries(openshot-test openshot)
+else()
+	target_link_libraries(openshot-test openshot_obj)
+endif()
+
+if(ENABLE_AUDIO_LIB)
+	target_link_libraries(openshot-test openshot-audio)
+else()
+	target_link_libraries(openshot-test OpenShot::Audio)
+endif()
 
 ##### RUNNING TESTS (make os_test / make test) #####
 # Hook up the 'make os_test' target to the 'openshot-test' executable

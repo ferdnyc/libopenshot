@@ -53,195 +53,79 @@ endif()
 find_package(SWIG 3.0 REQUIRED)
 include(${SWIG_USE_FILE})
 
-### Suppress a ton of warnings in the generated SWIG C++ code
-set(SWIG_CXX_FLAGS "-Wno-unused-variable -Wno-unused-function -Wno-deprecated-copy -Wno-class-memaccess -Wno-cast-function-type \
--Wno-unused-parameter -Wno-catch-value -Wno-sign-compare -Wno-ignored-qualifiers")
-
-if (CMAKE_VERSION VERSION_LESS 3.13.0)
-  include_directories(${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
-endif()
+include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/src)
 
 ### Enable C++ support in SWIG
 set_property(SOURCE openshot.i PROPERTY CPLUSPLUS ON)
-#set_property(SOURCE python.i PROPERTY SWIG_MODULE_NAME "lib")
 
-separate_arguments(sw_flags UNIX_COMMAND ${SWIG_CXX_FLAGS})
-set_property(SOURCE openshot.i PROPERTY GENERATED_COMPILE_OPTIONS ${sw_flags})
+#separate_arguments(sw_flags UNIX_COMMAND ${SWIG_CXX_FLAGS})
+#set_property(SOURCE openshot.i PROPERTY GENERATED_COMPILE_OPTIONS ${sw_flags})
 
-### Take include dirs from target, automatically if possible
-if (CMAKE_VERSION VERSION_GREATER 3.13)
-	set_property(SOURCE openshot.i PROPERTY USE_TARGET_INCLUDE_DIRECTORIES True)
-elseif (CMAKE_VERSION VERSION_GREATER 3.12)
+## Take include dirs from target, automatically if possible
+if(CMAKE_VERSION VERSION_GREATER 3.13)
 	set_property(SOURCE openshot.i PROPERTY
-		INCLUDE_DIRECTORIES $<TARGET_PROPERTY:openshot,INCLUDE_DIRECTORIES>)
-endif ()
+    USE_TARGET_INCLUDE_DIRECTORIES True
+  )
+else()
+	set_property(SOURCE openshot.i PROPERTY
+    GENERATED_INCLUDE_DIRECTORIES
+    $<TARGET_PROPERTY:openshot_obj,INCLUDE_DIRECTORIES>
+  )
+  set_property(SOURCE openshot.i property
+    GENERATED_COMPILE_OPTIONS
+    $<TARGET_PROPERTY:openshot_obj,COMPILE_OPTIONS>
+  )
+  set_property(SOURCE openshot.i property
+    GENERATED_COMPILE_DEFINITIONS
+    $<TARGET_PROPERTY:openshot_obj,COMPILE_DEFINITIONS>
+  )
+endif()
 
 ############### Discover each enabled language ################
-if (ENABLE_PYTHON)
-  find_package(PythonInterp 3)
-  find_package(PythonLibs 3)
-endif()
+if (ENABLE_PYTHON AND NOT PYTHON_CREATE_PACKAGE)
+  include(SWIGPython)
+
+  ### Set output name of target
+  set_target_properties(${SWIG_PYTHON_TARGET} PROPERTIES
+    PREFIX "_"
+  )
+
+  target_link_libraries(${SWIG_PYTHON_TARGET} PUBLIC ${PYTHON_LIBRARIES})
+
+  if(BUILD_INSTALLABLE)
+    target_link_libraries(${SWIG_PYTHON_TARGET} PUBLIC openshot)
+  else()
+    target_link_libraries(${SWIG_PYTHON_TARGET} PUBLIC openshot_obj)
+  endif()
+
+  if(ENABLE_AUDIO_LIB)
+    target_link_libraries(${SWIG_PYTHON_TARGET} PUBLIC openshot-audio)
+  endif()
+
+  install(TARGETS ${SWIG_PYTHON_TARGET}
+    DESTINATION python/
+  )
+
+endif() # ENABLE_PYTHON
+
+########## Ruby ##########
 
 if (ENABLE_RUBY)
   find_package(Ruby)
 endif()
 
-########### Python ###########
-if (ENABLE_PYTHON AND PYTHONLIBS_FOUND AND PYTHONINTERP_FOUND)
-	include_directories(${PYTHON_INCLUDE_PATH})
-
-	### Add the SWIG interface file (which defines all the SWIG methods)
-	if (CMAKE_VERSION VERSION_LESS 3.8.0)
-		set(CMAKE_SWIG_OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/libopenshot")
-		swig_add_module(pyopenshot python openshot.i)
-	else()
-		swig_add_library(pyopenshot
-		  LANGUAGE python
-		  SOURCES openshot.i
-      OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/libopenshot"
-      # OUTFILE_DIR "${CMAKE_CURRENT_BINARY_DIR}/libopenshot"
-    )
-	endif()
-
-	### Set output name of target
-	set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
-    PREFIX "_"
-    OUTPUT_NAME "openshot"
-    OUTPUT_DIRECTORY "libopenshot/"
-  )
-
-  # Always
-  set(_bundled_targets ${SWIG_MODULE_pyopenshot_REAL_NAME})
-
-  if (BUILD_BUNDLED)
-    # Build shared library for Python package
-    add_library(py_pkg_lib SHARED)
-    target_link_libraries(py_pkg_lib PUBLIC openshot_obj)
-
-    set_target_properties(py_pkg_lib
-      PROPERTIES
-        PREFIX "_"
-        LIBRARY_OUTPUT_NAME "pylibopenshot"
-        OUTPUT_DIRECTORY "libopenshot/"
-        NO_SONAME TRUE
-    )
-
-    if(CMAKE_VERSION VERSION_GREATER 3.14)
-      foreach(_target ${SWIG_MODULE_pyopenshot_REAL_NAME} py_pkg_lib)
-        set_target_properties(${_target}
-          PROPERTIES
-            BUILD_RPATH_USE_ORIGIN TRUE
-        )
-      endforeach()
-    endif()
-    # Also include openshot
-    list(APPEND _bundled_targets py_pkg_lib)
-  endif()
-
-  # Fix RPATH on libs being bundled
-  foreach(_b_t IN LISTS _bundled_targets)
-
-      if (APPLE)
-        set_property(TARGET ${_b_t}
-          PROPERTY INSTALL_RPATH "@loader_path")
-      elseif(UNIX)
-        set_property(TARGET ${_b_t}
-          PROPERTY INSTALL_RPATH "$ORIGIN")
-      endif()
-  endforeach()
-
-  ### Link the new python wrapper library with the rest of libopenshot
-  if(BUILD_BUNDLED)
-    # Link our module with the bundled lib
-    set(_module_linked py_pkg_lib)
-  elseif(BUILD_INSTALLABLE)
-    # Link to the installable shared library
-    set(_module_linked openshot)
-  else()
-    # Link the library classes directly into the module
-    set(_module_linked openshot_obj)
-  endif()
-
-	target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC
-    ${PYTHON_LIBRARIES}
-    ${_module_linked}
-  )
-
-  if(PYTHON_BUILD_PACKAGE)
-    # Special installation component PyPackage will "install"
-    # the package components inside the build dir for packaging
-    # by setup.py
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libopenshot/openshot.py
-      COMPONENT PyPackage EXCLUDE_FROM_ALL
-      DESTINATION python/libopenshot/
-    )
-
-    install(TARGETS pyopenshot
-      COMPONENT PyPackage EXCLUDE_FROM_ALL
-      DESTINATION python/libopenshot/
-    )
-
-    ### Create package __init__.py
-    file(GENERATE
-      OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/libopenshot/__init__.py"
-  		INPUT "${CMAKE_CURRENT_SOURCE_DIR}/libopenshot_init.py.in")
-
-    ### Create deprecation wrapper module
-    file(GENERATE
-      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/openshot/__init__.py
-  		INPUT ${CMAKE_CURRENT_SOURCE_DIR}/openshot_init.py.in)
-
-    # if(BUILD_BUNDLED)
-    #   install(TARGETS py_pkg_lib
-    #     COMPONENT PyPackage EXCLUDE_FROM_ALL
-    #     DESTINATION python/libopenshot
-    #   )
-    # endif()
-
-    # Install the executable in the packaging dir and create a sentinel file
-    # add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/python
-    #   DEPENDS
-    #     ${SWIG_MODULE_pyopenshot_REAL_NAME}
-    #     cmake_install.cmake
-    #   #COMMAND ${CMAKE_MAKE_PROGRAM} install PyPackage DESTDIR=${CMAKE_CURRENT_BINARY_DIR}/pypkg
-    #   COMMAND ${CMAKE_COMMAND}
-    #     -DCOMPONENT=PyPackage
-    #     -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}
-    #     -P cmake_install.cmake
-    #   COMMAND ${CMAKE_COMMAND} -E touch pkg_dir_updated
-    #   VERBATIM
-    #   BYPRODUCTS
-    #     ${PROJECT_BINARY_DIR}/python/libopenshot/openshot.py
-    #     ${PROJECT_BINARY_DIR}/python/libopenshot/_openshot.so
-    # )
-    #
-    # # Make sure the pkg_dir flag is removed when pyopenshot is rebuilt
-    # add_custom_command(TARGET ${SWIG_MODULE_pyopenshot_REAL_NAME}
-    #   POST_BUILD
-    #   COMMAND ${CMAKE_COMMAND} -E rm -r python
-    #   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    #   VERBATIM
-    # )
-
-  endif() # PYTHON_BUILD_PACKAGE
-
-endif() # ENABLE_PYTHON
-
-########## Ruby ##########
 if (ENABLE_RUBY AND RUBY_FOUND)
 	### Include the Ruby header files
 	include_directories(${RUBY_INCLUDE_DIRS})
+  include_directories($<TARGET_PROPERTY:openshot_obj,INCLUDE_DIRECTORIES>)
 
 	### Add the SWIG interface file (which defines all the SWIG methods)
 	if (CMAKE_VERSION VERSION_LESS 3.8.0)
-		# set(CMAKE_SWIG_OUTDIR "${CMAKE_CURRENT_BINARY_DIR}")
 		swig_add_module(rbopenshot ruby openshot.i)
 	else()
 		swig_add_library(rbopenshot
 			LANGUAGE ruby
 			SOURCES openshot.i
-			# OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/ruby/openshot"
-		  # OUTFILE_DIR "${CMAKE_CURRENT_BINARY_DIR}/ruby/openshot"
 		)
 	endif()
 
@@ -249,20 +133,26 @@ if (ENABLE_RUBY AND RUBY_FOUND)
 	SET_TARGET_PROPERTIES(${SWIG_MODULE_rbopenshot_REAL_NAME} PROPERTIES
     PREFIX ""
 		OUTPUT_NAME "openshot"
-    # OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/ruby/openshot"
   )
 
-	### Link the new Ruby wrapper library with libopenshot
-	target_link_libraries(${SWIG_MODULE_rbopenshot_REAL_NAME}
-    PUBLIC
-      ${RUBY_LIBRARY}
-      openshot
-  )
+  ### Link the new Ruby wrapper library with libopenshot
+	target_link_libraries(${SWIG_MODULE_rbopenshot_REAL_NAME} PUBLIC ${RUBY_LIBRARY})
+
+  if(BUILD_INSTALLABLE)
+    target_link_libraries(${SWIG_MODULE_rbopenshot_REAL_NAME} PUBLIC openshot)
+  else()
+    target_link_libraries(${SWIG_MODULE_rbopenshot_REAL_NAME} PUBLIC openshot_obj)
+  endif()
+
+
+  if(ENABLE_AUDIO_LIB)
+    target_link_libraries(${SWIG_MODULE_rbopenshot_REAL_NAME} PUBLIC openshot-audio)
+  endif()
 
   ###
   ### Ruby install path
   ###
-  if (NOT DEFINED RUBY_MODULE_PATH AND DEFINED $ENV{RUBY_MODULE_PATH})
+  if (NOT DEFINED RUBY_MODULE_PATH AND DEFINED ENV{RUBY_MODULE_PATH})
     set(RUBY_MODULE_PATH $ENV{RUBY_MODULE_PATH})
   endif()
 
