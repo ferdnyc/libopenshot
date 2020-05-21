@@ -28,7 +28,7 @@ dist = setuptools.setup(
         'Topic :: Multimedia :: Video',
         'Topic :: Multimedia :: Sound/Audio',
     ],
-    packages=setuptools.find_packages('bindings'),
+    packages=setuptools.find_packages(),
     package_data={
         # Include the SWIG shared library object
         "libopenshot": ["*.so", "*.dll", "*.dylib"],
