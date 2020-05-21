@@ -78,6 +78,8 @@ if (ImageMagick_FOUND)
 
   add_definitions(-DMAGICKCORE_QUANTUM_DEPTH=${MAGICKCORE_QUANTUM_DEPTH})
   add_definitions(-DMAGICKCORE_HDRI_ENABLE=${MAGICKCORE_HDRI_ENABLE})
+  set(HAVE_IMAGEMAGICK TRUE CACHE BOOL "Building with ImageMagick support" FORCE)
+  mark_as_advanced(HAVE_IMAGEMAGICK)
 endif()
 
 ################# BLACKMAGIC DECKLINK ###################
@@ -285,10 +287,20 @@ mark_as_advanced(QT_VERSION_STR)
 # Find FFmpeg libraries (used for video encoding / decoding)
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avdevice avformat avutil swscale)
 
-foreach(ff_comp avcodec avdevice avformat avfilter avutil postproc swscale swresample avresample)
+set(all_comps avcodec avdevice avformat avfilter avutil postproc swscale swresample avresample)
+set(version_comps avcodec avformat avutil)
+
+foreach(ff_comp IN LISTS all_comps)
   if(TARGET FFmpeg::${ff_comp})
-		target_link_libraries(openshot_obj PUBLIC FFmpeg::${ff_comp})
+    target_link_libraries(openshot_obj PUBLIC FFmpeg::${ff_comp})
+    # Keep track of some FFmpeg lib versions, to embed in our version header
+    if(${ff_comp} IN_LIST version_comps)
+      string(TOUPPER ${ff_comp} v_name)
+      set(${v_name}_VERSION_STR ${${ff_comp}_VERSION} CACHE STRING "${ff_comp} version used" FORCE)
+      mark_as_advanced(${v_name}_VERSION_STR)
+    endif()
   endif()
+
 endforeach()
 
 ################### Threads ####################
@@ -351,6 +363,10 @@ if (TARGET RESVG::resvg)
 
   target_compile_definitions(openshot_obj PUBLIC "-DUSE_RESVG=1")
   set(CMAKE_SWIG_FLAGS "-DUSE_RESVG=1")
+
+  set(HAVE_RESVG TRUE CACHE BOOL "Building with Resvg support" FORCE)
+  mark_as_advanced(HAVE_RESVG)
+
 endif()
 
 #
