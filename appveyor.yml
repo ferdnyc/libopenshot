@@ -31,6 +31,7 @@ for:
 
   install:
   - cmd: c:\msys64\usr\bin\bash -lc "pacman -Sy --noconfirm"
+  - cmd: C:\msys64\usr\bin\bash -lc "pacman -R --noconfirm mingw-w64-%PLAT_ARCH%-python3"
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
         mingw-w64-%PLAT_ARCH%-toolchain base-devel"
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
