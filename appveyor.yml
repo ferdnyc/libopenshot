@@ -7,6 +7,7 @@ platform:
   - x86
 
 image:
+  - Visual Studio 2019
   - Visual Studio 2017
   - macos
 
@@ -18,7 +19,7 @@ matrix:
       image: macos
 
 for:
-# Windows (both)
+# Windows (all)
 -
   matrix:
     except:
@@ -30,8 +31,6 @@ for:
   - cmd: IF %PLATFORM% == x86 set CMAKE_EXTRA_ARGS="-DENABLE_RUBY=0"
 
   install:
-  - cmd: c:\msys64\usr\bin\bash -lc "pacman -Sy --noconfirm"
-  - cmd: C:\msys64\usr\bin\bash -lc "pacman -R --noconfirm mingw-w64-%PLAT_ARCH%-python3"
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
         mingw-w64-%PLAT_ARCH%-toolchain base-devel"
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
