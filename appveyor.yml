@@ -32,6 +32,7 @@ for:
   install:
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
         mingw-w64-%PLAT_ARCH%-toolchain base-devel"
+  - cmd: c:\msys64\usr\bin\bash -lc "pacman --noconfirm -S mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python-httplib2"
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-cmake
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-doxygen
@@ -41,7 +42,7 @@ for:
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-swig
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python3-pyqt5
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python3-pip"
-  - cmd: pip3 install httplib2
+        # - cmd: pip3 install httplib2
 
   before_build:
   - cmd: set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
