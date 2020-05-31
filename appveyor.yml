@@ -55,5 +55,5 @@ build_script:
 test: off
 
 artifacts:
-- path: build/install-%PLAT_ARCH%
+- path: build-%PLAT_ARCH%/install-%PLAT_ARCH%
   name: libopenshot-%PLAT_ARCH%
