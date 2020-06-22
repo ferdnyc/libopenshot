@@ -220,12 +220,6 @@ if(RUBY_ENABLED OR PYTHON_ENABLED)
   add_subdirectory(bindings)
 endif()
 
-########## Configure Version.h header ##############
-configure_file(include/OpenShotVersion.h.in include/OpenShotVersion.h @ONLY)
-# We'll want that installed later
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/OpenShotVersion.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
-
 ################### DOCUMENTATION ###################
 if(PYTHON_CREATE_PACKAGE)
   add_subdirectory(packaging/python)

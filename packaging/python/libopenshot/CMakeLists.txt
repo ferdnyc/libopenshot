@@ -29,6 +29,7 @@ include(GNUInstallDirs)
 
 # This will set up the module target, and export its name
 # into our context as SWIG_PYTHON_TARGET
+include_directories($<TARGET_PROPERTY:openshot_obj,INCLUDE_DIRECTORIES>)
 include(SWIGPython)
 
 if(PYTHON_BUNDLE_LIBS)

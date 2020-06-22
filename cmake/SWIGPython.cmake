@@ -36,7 +36,6 @@ endif()
 
 ### Enable C++ support in SWIG
 set_property(SOURCE ${SWIG_FILE} PROPERTY CPLUSPLUS ON)
-#set_property(SOURCE python.i PROPERTY SWIG_MODULE_NAME "lib")
 
 separate_arguments(sw_flags UNIX_COMMAND ${SWIG_CXX_FLAGS})
 set_property(SOURCE ${SWIG_FILE} PROPERTY GENERATED_COMPILE_OPTIONS ${sw_flags})
@@ -64,15 +63,18 @@ endif()
 ### Set output name and configs propagation for target
 set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
   PREFIX "_"
+  OUTPUT_NAME "openshot"
   SWIG_USE_TARGET_INCLUDE_DIRECTORIES TRUE
   SWIG_USE_TARGET_COMPILE_DEFINITIONS TRUE
   SWIG_USE_TARGET_COMPILE_OPTIONS TRUE
 )
 
 # Link with Python (libopenshot linking will be handled later)
-target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC
-  ${PYTHON_LIBRARIES}
-)
+# XXX: Bad idea, apparently, see the advice in PEP-513:
+# https://www.python.org/dev/peps/pep-0513/#id41
+#target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC
+#  ${PYTHON_LIBRARIES}
+#)
 
 # Pass the target name back to our caller
 set(SWIG_PYTHON_TARGET ${SWIG_MODULE_pyopenshot_REAL_NAME})
