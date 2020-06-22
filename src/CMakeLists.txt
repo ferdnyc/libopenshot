@@ -238,7 +238,7 @@ target_include_directories(openshot_obj
 ################### JSONCPP #####################
 # Include jsoncpp headers (needed for JSON parsing)
 if (USE_SYSTEM_JSONCPP)
-	message(STATUS "Looking for system jsoncpp")
+  message(STATUS "Looking for system jsoncpp")
   # Either an installed config or our find module will
   # create the IMPORTED target jsoncpp_lib if successful
   find_package(jsoncpp)
@@ -354,7 +354,7 @@ if(DEFINED ENV{RESVGDIR} AND NOT DEFINED RESVG_ROOT)
 endif()
 
 # Find resvg library (used for rendering svg files)
-FIND_PACKAGE(RESVG)
+find_package(RESVG)
 
 # Include resvg headers (optional SVG library)
 if (TARGET RESVG::resvg)
@@ -362,7 +362,7 @@ if (TARGET RESVG::resvg)
   target_link_libraries(openshot_obj PUBLIC RESVG::resvg)
 
   target_compile_definitions(openshot_obj PUBLIC "-DUSE_RESVG=1")
-  set(CMAKE_SWIG_FLAGS "-DUSE_RESVG=1")
+  list(APPEND CMAKE_SWIG_FLAGS "-DUSE_RESVG=1")
 
   set(HAVE_RESVG TRUE CACHE BOOL "Building with Resvg support" FORCE)
   mark_as_advanced(HAVE_RESVG)
