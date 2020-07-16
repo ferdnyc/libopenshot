@@ -29,6 +29,12 @@ include(FeatureSummary)
 
 include(GNUInstallDirs)
 
+# Enable IN_LIST in older CMake
+if (POLICY CMP0057)
+  cmake_policy(SET CMP0057 NEW)
+endif()
+
+################ WINDOWS ##################
 ###
 ### Configure Version header
 ###
@@ -48,13 +54,15 @@ if (WIN32)
 endif()
 
 if (APPLE)
-  # If you still get errors compiling with GCC 4.8, mac headers need to be patched: http://hamelot.co.uk/programming/osx-gcc-dispatch_block_t-has-not-been-declared-invalid-typedef/
-  set_property(GLOBAL PROPERTY JUCE_MAC "JUCE_MAC")
-  add_definitions(-DNDEBUG)
-  set(EXTENSION "mm")
+	# If you still get errors compiling with GCC 4.8, mac headers need to be patched: http://hamelot.co.uk/programming/osx-gcc-dispatch_block_t-has-not-been-declared-invalid-typedef/
+	set_property(GLOBAL PROPERTY JUCE_MAC "JUCE_MAC")
+	add_definitions(-DNDEBUG)
+	set(EXTENSION "mm")
+	set(JUCE_PLATFORM_SPECIFIC_DIR build/macosx/platform_specific_code)
+	set(JUCE_PLATFORM_SPECIFIC_LIBRARIES "-framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreAudio -framework CoreMidi -framework IOKit -framework AGL -framework AudioToolbox -framework QuartzCore -lobjc -framework Accelerate")
 
-  set(JUCE_PLATFORM_SPECIFIC_DIR build/macosx/platform_specific_code)
-  set(JUCE_PLATFORM_SPECIFIC_LIBRARIES "-framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreAudio -framework CoreMidi -framework IOKit -framework AGL -framework AudioToolbox -framework QuartzCore -lobjc -framework Accelerate")
+	# Prevent compiling with __cxx11
+	add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif()
 
 ################ IMAGE MAGICK ##################
@@ -321,7 +329,6 @@ if(NOT TARGET OpenMP::OpenMP_CXX)
     add_library(OpenMP_TARGET INTERFACE)
     add_library(OpenMP::OpenMP_CXX ALIAS OpenMP_TARGET)
     target_compile_options(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(OpenMP_TARGET INTERFACE Threads::Threads)
     target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
 endif()
 
@@ -344,22 +351,25 @@ if (TARGET cppzmq)
   target_link_libraries(openshot_obj PUBLIC cppzmq)
 endif()
 
-################### RESVG #####################
+###
+### Resvg SVG renderer (compiled Rust library)
+###
+
 # Migrate some legacy variable names
-if(DEFINED RESVGDIR AND NOT DEFINED RESVG_ROOT)
-  set(RESVG_ROOT ${RESVGDIR})
+if(DEFINED RESVGDIR AND NOT DEFINED Resvg_ROOT)
+  set(Resvg_ROOT ${RESVGDIR})
 endif()
-if(DEFINED ENV{RESVGDIR} AND NOT DEFINED RESVG_ROOT)
-  set(RESVG_ROOT $ENV{RESVGDIR})
+if(DEFINED ENV{RESVGDIR} AND NOT DEFINED Resvg_ROOT)
+  set(Resvg_ROOT $ENV{RESVGDIR})
 endif()
 
 # Find resvg library (used for rendering svg files)
-find_package(RESVG)
+find_package(Resvg)
 
 # Include resvg headers (optional SVG library)
-if (TARGET RESVG::resvg)
+if (TARGET Resvg::resvg)
   #include_directories(${RESVG_INCLUDE_DIRS})
-  target_link_libraries(openshot_obj PUBLIC RESVG::resvg)
+  target_link_libraries(openshot_obj PUBLIC Resvg::resvg)
 
   target_compile_definitions(openshot_obj PUBLIC "-DUSE_RESVG=1")
   list(APPEND CMAKE_SWIG_FLAGS "-DUSE_RESVG=1")
