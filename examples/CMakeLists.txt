@@ -27,6 +27,10 @@
 
 include(GNUInstallDirs)
 
+if(POLICY CMP0083)
+  cmake_policy(SET CMP0083 NEW)
+endif()
+
 if(NOT DEFINED OPENSHOT_LIB_TARGETS)
   set(OPENSHOT_LIB_TARGETS openshot OpenShot::Audio)
 endif()
@@ -34,29 +38,34 @@ endif()
 # Dependencies
 find_package(Qt5 COMPONENTS Gui REQUIRED)
 
+# Define path to test input files
+file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}/examples/" TEST_MEDIA_PATH)
+
 ############### CLI EXECUTABLES ################
 # Create test executable
 add_executable(openshot-example Example.cpp)
-
-# Define path to test input files
-file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}/examples/" TEST_MEDIA_PATH)
 target_compile_definitions(openshot-example PRIVATE
 	-DTEST_MEDIA_PATH="${TEST_MEDIA_PATH}" )
-
-# Link test executable to the new library
-target_link_libraries(openshot-example ${OPENSHOT_LIB_TARGETS})
+target_link_libraries(openshot-example openshot_obj openshot_deps)
 
 add_executable(openshot-html-test ExampleHtml.cpp)
-target_link_libraries(openshot-html-test ${OPENSHOT_LIB_TARGETS} Qt5::Gui)
+target_link_libraries(openshot-html-test openshot_obj openshot_deps)
 
 ############### PLAYER EXECUTABLE ################
 # Create test executable
-add_executable(openshot-player qt-demo/main.cpp)
+if(ENABLE_BUNDLED)
+  add_executable(openshot-player qt-demo/main.cpp $<TARGET_OBJECTS:openshot_obj>)
+  set_target_properties(openshot-player PROPERTIES
+    AUTOMOC ON
+    POSITION_INDEPENDENT_CODE ON
+    )
 
-set_target_properties(openshot-player PROPERTIES AUTOMOC ON)
+else()
+  add_executable(openshot-player qt-demo/main.cpp)
+endif()
 
 # Link test executable to the new library
-target_link_libraries(openshot-player ${OPENSHOT_LIB_TARGETS})
+target_link_libraries(openshot-player openshot_deps)
 
 ############### TEST BLACKMAGIC CAPTURE APP ################
 if (BLACKMAGIC_FOUND)

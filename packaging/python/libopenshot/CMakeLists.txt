@@ -34,7 +34,7 @@ include(SWIGPython)
 
 if(PYTHON_BUNDLE_LIBS)
   # Build shared libopenshot for Python package
-  add_library(py_pkg_openshot SHARED)
+  add_library(py_pkg_openshot SHARED $<TARGET_OBJECTS:openshot_obj>)
   target_link_libraries(py_pkg_openshot PUBLIC openshot_obj)
 
   set_target_properties(py_pkg_openshot
@@ -47,8 +47,9 @@ if(PYTHON_BUNDLE_LIBS)
   set(_local_targets py_pkg_openshot)
 
   if(ENABLE_AUDIO_LIB AND PYTHON_BUNDLE_AUDIO_LIB)
-    add_library(py_pkg_openshot_audio SHARED)
-    target_link_libraries(py_pkg_openshot_audio PUBLIC openshot-audio_obj)
+    add_library(py_pkg_openshot_audio SHARED
+      $<TARGET_OBJECTS:openshot-audio>)
+    target_link_libraries(py_pkg_openshot_audio PUBLIC openshot-audio)
 
     set_target_properties(py_pkg_openshot_audio
       PROPERTIES

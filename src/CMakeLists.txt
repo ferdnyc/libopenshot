@@ -54,12 +54,13 @@ if (WIN32)
 endif()
 
 if (APPLE)
-	# If you still get errors compiling with GCC 4.8, mac headers need to be patched: http://hamelot.co.uk/programming/osx-gcc-dispatch_block_t-has-not-been-declared-invalid-typedef/
-	set_property(GLOBAL PROPERTY JUCE_MAC "JUCE_MAC")
-	add_definitions(-DNDEBUG)
-	set(EXTENSION "mm")
-	set(JUCE_PLATFORM_SPECIFIC_DIR build/macosx/platform_specific_code)
-	set(JUCE_PLATFORM_SPECIFIC_LIBRARIES "-framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreAudio -framework CoreMidi -framework IOKit -framework AGL -framework AudioToolbox -framework QuartzCore -lobjc -framework Accelerate")
+  # If you still get errors compiling with GCC 4.8, mac headers need to be patched: http://hamelot.co.uk/programming/osx-gcc-dispatch_block_t-has-not-been-declared-invalid-typedef/
+  set_property(GLOBAL PROPERTY JUCE_MAC "JUCE_MAC")
+  add_definitions(-DNDEBUG)
+  set(EXTENSION "mm")
+
+  set(JUCE_PLATFORM_SPECIFIC_DIR build/macosx/platform_specific_code)
+  set(JUCE_PLATFORM_SPECIFIC_LIBRARIES "-framework Carbon -framework Cocoa -framework CoreFoundation -framework CoreAudio -framework CoreMidi -framework IOKit -framework AGL -framework AudioToolbox -framework QuartzCore -lobjc -framework Accelerate")
 
 	# Prevent compiling with __cxx11
 	add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
@@ -165,11 +166,13 @@ set(CMAKE_MACOSX_RPATH 0)
 
 # Create object target for all library classes
 add_library(openshot_obj OBJECT)
-target_sources(openshot_obj PRIVATE
+target_sources(openshot_obj PUBLIC
   ${OPENSHOT_SOURCES}
   ${EFFECTS_SOURCES}
   ${QT_PLAYER_SOURCES}
 )
+# And create interface library to hold dependencies
+add_library(openshot_deps INTERFACE)
 
 # Automatically MOC classes in object library
 set_target_properties(openshot_obj PROPERTIES
@@ -182,11 +185,13 @@ target_include_directories(openshot_obj
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
-  PUBLIC
+    )
+target_include_directories(openshot_deps
+  INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libopenshot>)
-
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libopenshot>
+    )
 
 ################# BLACKMAGIC DECKLINK ###################
 # Find BlackMagic DeckLinkAPI libraries
@@ -217,7 +222,7 @@ if (ENABLE_BLACKMAGIC)
 
     add_library(BlackMagic::DeckLink ALIAS DeckLink_TARGET)
   endif()
-  target_link_libraries(openshot_obj PRIVATE BlackMagic::DeckLink)
+  target_link_libraries(openshot_deps INTERFACE BlackMagic::DeckLink)
 endif()
 
 ################ IMAGE MAGICK ##################
@@ -268,7 +273,7 @@ if (ImageMagick_FOUND)
     CACHE BOOL "Building with ImageMagick support" FORCE)
   mark_as_advanced(HAVE_IMAGEMAGICK)
 
-  target_link_libraries(openshot_obj PUBLIC ImageMagick::Magick++)
+  target_link_libraries(openshot_deps INTERFACE ImageMagick::Magick++)
 endif()
 
 ################### JSONCPP #####################
@@ -310,7 +315,7 @@ endif ()
 
 # If we found any usable jsoncpp, use it. Otherwise, bail.
 if (TARGET jsoncpp_lib)
-  target_link_libraries(openshot_obj PUBLIC jsoncpp_lib)
+  target_link_libraries(openshot_deps INTERFACE jsoncpp_lib)
 endif ()
 
 ################# QT5 ###################
@@ -320,7 +325,7 @@ find_package(Qt5 COMPONENTS ${_qt_components} REQUIRED)
 
 foreach(_qt_comp IN LISTS _qt_components)
   if(TARGET Qt5::${_qt_comp})
-    target_link_libraries(openshot_obj PUBLIC Qt5::${_qt_comp})
+    target_link_libraries(openshot_deps INTERFACE Qt5::${_qt_comp})
   endif()
 endforeach()
 
@@ -337,7 +342,7 @@ set(version_comps avcodec avformat avutil)
 
 foreach(ff_comp IN LISTS all_comps)
   if(TARGET FFmpeg::${ff_comp})
-    target_link_libraries(openshot_obj PUBLIC FFmpeg::${ff_comp})
+    target_link_libraries(openshot_deps INTERFACE FFmpeg::${ff_comp})
 
     # Keep track of some FFmpeg lib versions, to embed in our version header
     if(${ff_comp} IN_LIST version_comps)
@@ -363,7 +368,7 @@ if(NOT TARGET OpenMP::OpenMP_CXX)
     target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
 endif()
 
-target_link_libraries(openshot_obj PUBLIC OpenMP::OpenMP_CXX)
+target_link_libraries(openshot_deps INTERFACE OpenMP::OpenMP_CXX)
 
 ################### ZEROMQ #####################
 # Find ZeroMQ library (used for socket communication & logging)
@@ -375,11 +380,11 @@ find_package(cppzmq QUIET) # Creates cppzmq target
 
 # Link ZeroMQ library
 if (TARGET libzmq)
-	target_link_libraries(openshot_obj PUBLIC libzmq)
+	target_link_libraries(openshot_deps INTERFACE libzmq)
 endif()
 # Include cppzmq headers, if not bundled into libzmq
 if (TARGET cppzmq)
-  target_link_libraries(openshot_obj PUBLIC cppzmq)
+  target_link_libraries(openshot_deps INTERFACE cppzmq)
 endif()
 
 ###
@@ -404,10 +409,10 @@ if (TARGET Resvg::resvg OR TARGET Resvg::resvg_static)
     # Prefer static linking when bundled
     target_link_libraries(openshot_obj PRIVATE Resvg::resvg_static)
   else()
-    target_link_libraries(openshot_obj PUBLIC Resvg::resvg)
+    target_link_libraries(openshot_deps INTERFACE Resvg::resvg)
   endif()
 
-  target_compile_definitions(openshot_obj PUBLIC "-DUSE_RESVG=1")
+  target_compile_definitions(openshot_deps INTERFACE "-DUSE_RESVG=1")
   list(APPEND CMAKE_SWIG_FLAGS "-DUSE_RESVG=1")
 
   set(HAVE_RESVG TRUE CACHE BOOL "Building with Resvg support" FORCE)
@@ -419,13 +424,16 @@ endif()
 # Link remaining dependency libraries
 #
 if(BLACKMAGIC_FOUND)
-  target_link_libraries(openshot_obj PUBLIC ${BLACKMAGIC_LIBRARY_DIR})
+  target_link_libraries(openshot_deps INTERFACE ${BLACKMAGIC_LIBRARY_DIR})
 endif()
 
 if(WIN32)
 	# Required for exception handling on Windows
-	target_link_libraries(openshot_obj PUBLIC "imagehlp" "dbghelp" )
+	target_link_libraries(openshot_deps INTERFACE "imagehlp" "dbghelp" )
 endif()
+
+# Make sure the objects get the correct dependency configs
+target_link_libraries(openshot_obj PUBLIC openshot_deps)
 
 ###
 ### OpenShotAudio
@@ -440,7 +448,10 @@ if(ENABLE_AUDIO_LIB)
   target_include_directories(openshot_obj
     PRIVATE
       $<TARGET_PROPERTY:openshot-audio,INCLUDE_DIRECTORIES>
-    PUBLIC
+      )
+
+  target_include_directories(openshot_deps
+    INTERFACE
       $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/libopenshot-audio/include>
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libopenshot-audio/JuceLibraryCode/modules>
       $<INSTALL_INTERFACE:include/libopenshot-audio>
@@ -476,7 +487,7 @@ endif()
 ###
 if(BUILD_INSTALLABLE)
 	# Create installable, versioned shared library
-	add_library(openshot SHARED)
+  add_library(openshot SHARED $<TARGET_OBJECTS:openshot_obj>)
 
 	# Set SONAME and other shared library properties
 	set_target_properties(openshot PROPERTIES
@@ -485,8 +496,8 @@ if(BUILD_INSTALLABLE)
 		INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
 	)
 
-  # Link with object target and audio lib
-  target_link_libraries(openshot PUBLIC openshot_obj)
+  # Link with dependencies target and audio lib
+  target_link_libraries(openshot PUBLIC openshot_deps)
   target_link_libraries(openshot PUBLIC OpenShot::Audio)
 
   list(APPEND OPENSHOT_LIB_TARGETS openshot)
