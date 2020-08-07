@@ -27,41 +27,43 @@
 
 include(GNUInstallDirs)
 
-if(BUILD_INSTALLABLE)
-  # Dependencies
-  find_package(Qt5 COMPONENTS Gui REQUIRED)
+if(NOT DEFINED OPENSHOT_LIB_TARGETS)
+  set(OPENSHOT_LIB_TARGETS openshot OpenShot::Audio)
+endif()
 
-  ############### CLI EXECUTABLES ################
-  # Create test executable
-  add_executable(openshot-example Example.cpp)
+# Dependencies
+find_package(Qt5 COMPONENTS Gui REQUIRED)
 
-  # Define path to test input files
-  file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}/examples/" TEST_MEDIA_PATH)
-  target_compile_definitions(openshot-example PRIVATE
-  	-DTEST_MEDIA_PATH="${TEST_MEDIA_PATH}" )
+############### CLI EXECUTABLES ################
+# Create test executable
+add_executable(openshot-example Example.cpp)
 
-  # Link test executable to the new library
-  target_link_libraries(openshot-example openshot)
+# Define path to test input files
+file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}/examples/" TEST_MEDIA_PATH)
+target_compile_definitions(openshot-example PRIVATE
+	-DTEST_MEDIA_PATH="${TEST_MEDIA_PATH}" )
 
-  add_executable(openshot-html-test ExampleHtml.cpp)
-  target_link_libraries(openshot-html-test openshot Qt5::Gui)
+# Link test executable to the new library
+target_link_libraries(openshot-example ${OPENSHOT_LIB_TARGETS})
 
-  ############### PLAYER EXECUTABLE ################
-  # Create test executable
-  add_executable(openshot-player qt-demo/main.cpp)
+add_executable(openshot-html-test ExampleHtml.cpp)
+target_link_libraries(openshot-html-test ${OPENSHOT_LIB_TARGETS} Qt5::Gui)
 
-  set_target_properties(openshot-player PROPERTIES AUTOMOC ON)
+############### PLAYER EXECUTABLE ################
+# Create test executable
+add_executable(openshot-player qt-demo/main.cpp)
 
-  # Link test executable to the new library
-  target_link_libraries(openshot-player openshot)
+set_target_properties(openshot-player PROPERTIES AUTOMOC ON)
 
-  ############### TEST BLACKMAGIC CAPTURE APP ################
-  if (BLACKMAGIC_FOUND)
-  	# Create test executable
-  	add_executable(openshot-blackmagic
-  			examples/ExampleBlackmagic.cpp)
+# Link test executable to the new library
+target_link_libraries(openshot-player ${OPENSHOT_LIB_TARGETS})
 
-  	# Link test executable to the new library
-  	target_link_libraries(openshot-blackmagic openshot)
-  endif()
+############### TEST BLACKMAGIC CAPTURE APP ################
+if (BLACKMAGIC_FOUND)
+	# Create test executable
+	add_executable(openshot-blackmagic
+			examples/ExampleBlackmagic.cpp)
+
+	# Link test executable to the new library
+  target_link_libraries(openshot-blackmagic ${OPENSHOT_LIB_TARGETS})
 endif()

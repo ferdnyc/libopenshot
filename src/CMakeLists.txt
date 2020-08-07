@@ -65,48 +65,6 @@ if (APPLE)
 	add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 endif()
 
-################ IMAGE MAGICK ##################
-# Set the Quantum Depth that ImageMagick was built with (default to 16 bits)
-if(NOT DEFINED MAGICKCORE_QUANTUM_DEPTH)
-  set(MAGICKCORE_QUANTUM_DEPTH 16)
-endif()
-if(NOT DEFINED MAGICKCORE_HDRI_ENABLE)
-  set(MAGICKCORE_HDRI_ENABLE 0)
-endif()
-
-# Find the ImageMagick++ library
-find_package(ImageMagick COMPONENTS Magick++ MagickWand MagickCore)
-if (ImageMagick_FOUND)
-  # Include ImageMagick++ headers (needed for compile)
-  include_directories(${ImageMagick_INCLUDE_DIRS})
-
-  # define a global var (used in the C++)
-  add_definitions( -DUSE_IMAGEMAGICK=1 )
-  list(APPEND CMAKE_SWIG_FLAGS "-DUSE_IMAGEMAGICK=1")
-
-  add_definitions(-DMAGICKCORE_QUANTUM_DEPTH=${MAGICKCORE_QUANTUM_DEPTH})
-  add_definitions(-DMAGICKCORE_HDRI_ENABLE=${MAGICKCORE_HDRI_ENABLE})
-  set(HAVE_IMAGEMAGICK TRUE CACHE BOOL "Building with ImageMagick support" FORCE)
-  mark_as_advanced(HAVE_IMAGEMAGICK)
-endif()
-
-################# BLACKMAGIC DECKLINK ###################
-# Find BlackMagic DeckLinkAPI libraries
-if (ENABLE_BLACKMAGIC)
-
-  find_package(BlackMagic)
-
-  if (BLACKMAGIC_FOUND)
-    # Include Blackmagic headers (needed for compile)
-    include_directories(${BLACKMAGIC_INCLUDE_DIR})
-
-    # define a global var (used in the C++)
-    add_definitions( -DUSE_BLACKMAGIC=1 )
-    list(APPEND CMAKE_SWIG_FLAGS "-DUSE_BLACKMAGIC=1")
-  endif()
-
-endif()
-
 ###
 ### INCLUDE WHAT YOU USE
 ###
@@ -168,7 +126,8 @@ set(OPENSHOT_SOURCES
   QtPlayer.cpp
   QtTextReader.cpp
   Settings.cpp
-  Timeline.cpp)
+  Timeline.cpp
+  )
 
 # Video effects
 set(EFFECTS_SOURCES
@@ -185,7 +144,8 @@ set(EFFECTS_SOURCES
   effects/Pixelate.cpp
   effects/Saturation.cpp
   effects/Shift.cpp
-  effects/Wave.cpp)
+  effects/Wave.cpp
+  )
 
 # Qt video player components
 set(QT_PLAYER_SOURCES
@@ -195,7 +155,8 @@ set(QT_PLAYER_SOURCES
   Qt/VideoCacheThread.cpp
   Qt/VideoPlaybackThread.cpp
   Qt/VideoRenderer.cpp
-  Qt/VideoRenderWidget.cpp)
+  Qt/VideoRenderWidget.cpp
+  )
 
 # Disable RPATH
 set(CMAKE_MACOSX_RPATH 0)
@@ -216,23 +177,6 @@ set_target_properties(openshot_obj PROPERTIES
   POSITION_INDEPENDENT_CODE TRUE
 )
 
-# Add optional ImageMagic-dependent sources
-if(ImageMagick_FOUND)
-	target_sources(openshot_obj PRIVATE
-    ImageReader.cpp
-    ImageWriter.cpp
-    TextReader.cpp)
-endif()
-
-# BlackMagic related files
-if(BLACKMAGIC_FOUND)
-  target_sources(openshot_obj PRIVATE
-    DecklinkInput.cpp
-    DecklinkReader.cpp
-    DecklinkOutput.cpp
-    DecklinkWriter.cpp)
-endif()
-
 # Location of our includes, both internally and when installed
 target_include_directories(openshot_obj
   PRIVATE
@@ -242,6 +186,90 @@ target_include_directories(openshot_obj
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libopenshot>)
+
+
+################# BLACKMAGIC DECKLINK ###################
+# Find BlackMagic DeckLinkAPI libraries
+if (ENABLE_BLACKMAGIC)
+  find_package(BlackMagic)
+
+  if (BLACKMAGIC_FOUND)
+    # Add BlackMagic-dependent source files to libopenshot build
+    target_sources(openshot_obj
+      PRIVATE
+        DecklinkInput.cpp
+        DecklinkReader.cpp
+        DecklinkOutput.cpp
+        DecklinkWriter.cpp
+      )
+
+    # Create target for BlackMagic usage requirements
+    add_library(DeckLink_TARGET INTERFACE)
+
+    target_include_directories(DeckLink_TARGET INTERFACE
+      ${BLACKMAGIC_INCLUDE_DIR}
+      )
+
+    target_compile_definitions(DeckLink_TARGET INTERFACE
+      -DUSE_BLACKMAGIC=1
+      )
+    list(APPEND CMAKE_SWIG_FLAGS "-DUSE_BLACKMAGIC=1")
+
+    add_library(BlackMagic::DeckLink ALIAS DeckLink_TARGET)
+  endif()
+  target_link_libraries(openshot_obj PRIVATE BlackMagic::DeckLink)
+endif()
+
+################ IMAGE MAGICK ##################
+# Set the Quantum Depth that ImageMagick was built with (default to 16 bits)
+if(NOT DEFINED MAGICKCORE_QUANTUM_DEPTH)
+  set(MAGICKCORE_QUANTUM_DEPTH 16)
+endif()
+if(NOT DEFINED MAGICKCORE_HDRI_ENABLE)
+  set(MAGICKCORE_HDRI_ENABLE 0)
+endif()
+
+# Find the ImageMagick++ library
+find_package(ImageMagick COMPONENTS Magick++ MagickWand MagickCore)
+if (ImageMagick_FOUND)
+  if(NOT TARGET ImageMagick::Magick++)
+
+    # Add optional ImageMagic-dependent source files for libopenshot
+    target_sources(openshot_obj
+      PRIVATE
+        ImageReader.cpp
+        ImageWriter.cpp
+        TextReader.cpp
+        )
+
+    # Create target encapsulating ImageMagick++ library usage requirements
+    add_library(ImageMagick_TARGET INTERFACE)
+    target_link_libraries(ImageMagick_TARGET INTERFACE
+      ${ImageMagick_LIBRARIES}
+      )
+
+    # Include ImageMagick++ headers (needed for compile)
+    target_include_directories(ImageMagick_TARGET INTERFACE
+      ${ImageMagick_INCLUDE_DIRS}
+      )
+
+    # define a global var (used in the C++)
+    target_compile_definitions(ImageMagick_TARGET INTERFACE
+      -DUSE_IMAGEMAGICK=1
+      -DMAGICKCORE_QUANTUM_DEPTH=${MAGICKCORE_QUANTUM_DEPTH}
+      -DMAGICKCORE_HDRI_ENABLE=${MAGICKCORE_HDRI_ENABLE}
+      )
+    add_library(ImageMagick::Magick++ ALIAS ImageMagick_TARGET)
+  endif()
+
+  list(APPEND CMAKE_SWIG_FLAGS "-DUSE_IMAGEMAGICK=1")
+
+  set(HAVE_IMAGEMAGICK TRUE
+    CACHE BOOL "Building with ImageMagick support" FORCE)
+  mark_as_advanced(HAVE_IMAGEMAGICK)
+
+  target_link_libraries(openshot_obj PUBLIC ImageMagick::Magick++)
+endif()
 
 ################### JSONCPP #####################
 # Include jsoncpp headers (needed for JSON parsing)
@@ -254,15 +282,24 @@ endif ()
 
 if (NOT jsoncpp_FOUND AND NOT DISABLE_BUNDLED_JSONCPP)
   message(STATUS "Using embedded jsoncpp (not found or USE_SYSTEM_JSONCPP disabled)")
+
   if (NOT TARGET jsoncpp_lib)
     add_library(jsoncpp_lib INTERFACE)
+
     target_include_directories(jsoncpp_lib INTERFACE
-      "${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp")
-    target_sources(jsoncpp_lib INTERFACE "${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/jsoncpp.cpp")
+      "${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp"
+      )
+    target_sources(jsoncpp_lib INTERFACE
+      "${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/jsoncpp.cpp"
+      )
+
     # Because this satisfies the requirement, an installed JsonCpp is optional
     set_package_properties(jsoncpp PROPERTIES TYPE OPTIONAL)
   endif ()
+
+  # Create status for FeatureSummary output
   add_feature_info("jsoncpp (embedded)" TRUE "jsoncpp will be compiled from the bundled sources")
+
 endif ()
 
 if (jsoncpp_FOUND)
@@ -301,14 +338,15 @@ set(version_comps avcodec avformat avutil)
 foreach(ff_comp IN LISTS all_comps)
   if(TARGET FFmpeg::${ff_comp})
     target_link_libraries(openshot_obj PUBLIC FFmpeg::${ff_comp})
+
     # Keep track of some FFmpeg lib versions, to embed in our version header
     if(${ff_comp} IN_LIST version_comps)
       string(TOUPPER ${ff_comp} v_name)
       set(${v_name}_VERSION_STR ${${ff_comp}_VERSION} CACHE STRING "${ff_comp} version used" FORCE)
       mark_as_advanced(${v_name}_VERSION_STR)
     endif()
-  endif()
 
+  endif()
 endforeach()
 
 ################### Threads ####################
@@ -367,9 +405,14 @@ endif()
 find_package(Resvg)
 
 # Include resvg headers (optional SVG library)
-if (TARGET Resvg::resvg)
-  #include_directories(${RESVG_INCLUDE_DIRS})
-  target_link_libraries(openshot_obj PUBLIC Resvg::resvg)
+if (TARGET Resvg::resvg OR TARGET Resvg::resvg_static)
+  if (PYTHON_BUNDLE_LIBS AND TARGET Resvg::resvg_static
+      OR NOT TARGET Resvg::resvg)
+    # Prefer static linking when bundled
+    target_link_libraries(openshot_obj PRIVATE Resvg::resvg_static)
+  else()
+    target_link_libraries(openshot_obj PUBLIC Resvg::resvg)
+  endif()
 
   target_compile_definitions(openshot_obj PUBLIC "-DUSE_RESVG=1")
   list(APPEND CMAKE_SWIG_FLAGS "-DUSE_RESVG=1")
@@ -382,10 +425,6 @@ endif()
 #
 # Link remaining dependency libraries
 #
-if(ImageMagick_FOUND)
-  target_link_libraries(openshot_obj PUBLIC ${ImageMagick_LIBRARIES})
-endif()
-
 if(BLACKMAGIC_FOUND)
   target_link_libraries(openshot_obj PUBLIC ${BLACKMAGIC_LIBRARY_DIR})
 endif()
@@ -399,19 +438,12 @@ endif()
 ### OpenShotAudio
 ###
 # Find external JUCE-based OpenShot Audio library
-if(NOT ENABLE_AUDIO_LIB)
-  find_package(OpenShotAudio 0.2.0 REQUIRED)
-
-  # Create target for libopenshot-audio
-  if (NOT TARGET OpenShot::Audio)
-    add_library(OpenShotAudio_TARGET INTERFACE)
-    add_library(OpenShot::Audio ALIAS OpenShotAudio_TARGET)
-    target_include_directories(OpenShotAudio_TARGET INTERFACE
-      ${OpenShotAudio_INCLUDE_DIR})
-    target_link_libraries(OpenShotAudio_TARGET INTERFACE
-      ${OpenShotAudio_LIBRARY})
+if(ENABLE_AUDIO_LIB)
+  if(NOT TARGET OpenShot::Audio)
+    add_library(OpenShot::Audio ALIAS openshot-audio)
   endif()
-else()
+  # Include dirs don't always seem to be transient from targets outside
+  # current source directory
   target_include_directories(openshot_obj
     PRIVATE
       $<TARGET_PROPERTY:openshot-audio,INCLUDE_DIRECTORIES>
@@ -420,8 +452,31 @@ else()
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/libopenshot-audio/JuceLibraryCode/modules>
       $<INSTALL_INTERFACE:include/libopenshot-audio>
   )
-endif()
+else()
+  find_package(OpenShotAudio 0.2.0 REQUIRED)
 
+  if (NOT TARGET OpenShot::Audio)
+    # Create target encapsulating usage requirements for libopenshot-audio
+    add_library(OpenShotAudio_TARGET INTERFACE)
+    target_include_directories(OpenShotAudio_TARGET INTERFACE
+      ${OpenShotAudio_INCLUDE_DIR}
+      )
+    target_link_libraries(OpenShotAudio_TARGET INTERFACE
+      ${OpenShotAudio_LIBRARY}
+      )
+
+    add_library(OpenShot::Audio ALIAS OpenShotAudio_TARGET)
+  endif()
+
+  if(DEFINED OpenShotAudio_VERSION)
+    # Keep track of the lib version, to embed in our version header
+    set(OPENSHOT_AUDIO_VERSION_STR ${OpenShotAudio_VERSION}
+      CACHE STRING "libopenshot-audio version used" FORCE
+      )
+    mark_as_advanced(OPENSHOT_AUDIO_VERSION_STR)
+  endif()
+
+endif()
 
 ###
 ### libopenshot shared library
@@ -437,14 +492,11 @@ if(BUILD_INSTALLABLE)
 		INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
 	)
 
-  # Link with object target
+  # Link with object target and audio lib
   target_link_libraries(openshot PUBLIC openshot_obj)
+  target_link_libraries(openshot PUBLIC OpenShot::Audio)
 
-  if(ENABLE_AUDIO_LIB)
-    target_link_libraries(openshot PUBLIC openshot-audio)
-  else()
-    target_link_libraries(openshot PUBLIC OpenShot::Audio)
-  endif()
+  list(APPEND OPENSHOT_LIB_TARGETS openshot)
 
 	# Install primary library
 	install(TARGETS openshot
@@ -459,7 +511,14 @@ if(BUILD_INSTALLABLE)
 	    ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot
 	  FILES_MATCHING PATTERN "*.h"
 	)
+else()
+  # Not building installable, executables need both libs
+  list(APPEND OPENSHOT_LIB_TARGETS openshot_obj OpenShot::Audio)
 endif()
+
+# Cache the list of targets for our executables to link with
+list(REMOVE_DUPLICATES OPENSHOT_LIB_TARGETS)
+set(OPENSHOT_LIB_TARGETS ${OPENSHOT_LIB_TARGETS} CACHE INTERNAL "Library targets to link into executables" FORCE)
 
 ############### CPACK PACKAGING ##############
 if(MINGW)

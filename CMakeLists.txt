@@ -24,7 +24,7 @@
 # along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
-cmake_minimum_required(VERSION 3.2...3.14 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5...3.17 FATAL_ERROR)
 
 message("\
 -----------------------------------------------------------------
@@ -61,7 +61,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.15 AND NOT IGNORE_DEFAULTS)
 endif()
 
 ################ PROJECT VERSION ####################
-set(PROJECT_VERSION_FULL "0.2.5-dev2" CACHE STRING "Extended version string" FORCE)
+set(PROJECT_VERSION_FULL "0.2.6.dev1" CACHE STRING "Extended version string" FORCE)
 set(PROJECT_SO_VERSION 19 CACHE STRING "library API version" FORCE)
 
 ### METADATA
@@ -82,8 +82,8 @@ set(PROJECT_MAINTAINER "Jonathan Thomas" CACHE STRING "Project metadata")
 set(PROJECT_MAINTAINER_EMAIL "jonathan@openshot.org" CACHE STRING "Project metadata")
 set(PROJECT_URL "https://github.com/OpenShot/libopenshot/" CACHE STRING "Project metadata")
 
-# Remove the dash and anything following, to get the #.#.# version for project()
-STRING(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
+# Remove any .dev qualifiers, to get the #.#.#[.#] version for project()
+STRING(REGEX REPLACE "\.dev" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
 
 ###
 ### SETUP PROJECT
@@ -94,6 +94,8 @@ STRING(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
 # PROJECT_VERSION_MAJOR, libopenshot_VERSION_MAJOR
 # PROJECT_VERSION_MINOR, libopenshot_VERSION_MINOR
 # PROJECT_VERSION_PATCH, libopenshot_VERSION_PATCH
+# and possibly
+# PROJECT_VERSION_TWEAK, libopenshot_VERSION_TWEAK
 PROJECT(libopenshot LANGUAGES C CXX VERSION ${VERSION_NUM})
 
 message("

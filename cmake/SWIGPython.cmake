@@ -39,6 +39,7 @@ set_property(SOURCE ${SWIG_FILE} PROPERTY CPLUSPLUS ON)
 
 separate_arguments(sw_flags UNIX_COMMAND ${SWIG_CXX_FLAGS})
 set_property(SOURCE ${SWIG_FILE} PROPERTY GENERATED_COMPILE_OPTIONS ${sw_flags})
+set_property(SOURCE ${SWIG_FILE} PROPERTY SWIG_COMPILE_OPTIONS -castmode)
 
 ### Take include dirs from target, automatically if possible
 if (CMAKE_VERSION VERSION_GREATER 3.13)

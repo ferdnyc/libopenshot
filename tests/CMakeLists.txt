@@ -24,6 +24,11 @@
 # along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
+# Guess at the correct targets, if the list isn't cached
+if(NOT DEFINED OPENSHOT_LIB_TARGETS)
+  set(OPENSHOT_LIB_TARGETS openshot OpenShot::Audio)
+endif()
+
 # Test media path, used by unit tests for input data
 file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}/examples/" TEST_MEDIA_PATH)
 add_definitions( -DTEST_MEDIA_PATH="${TEST_MEDIA_PATH}" )
@@ -53,30 +58,13 @@ endif()
 # Include UnitTest++ headers (needed for compile)
 include_directories(${UnitTest++_INCLUDE_DIRS})
 
-set_package_properties(UnitTest++ PROPERTIES
-  TYPE RECOMMENDED
-  PURPOSE "Unit testing framework")
+set_package_properties(UnitTest++
+  PROPERTIES
+    TYPE RECOMMENDED
+    PURPOSE "Unit testing framework"
+  )
 
 ################ IMAGE MAGICK ##################
-# Set the Quantum Depth that ImageMagick was built with (default to 16 bits)
-if(MAGICKCORE_QUANTUM_DEPTH)
-	add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=${MAGICKCORE_QUANTUM_DEPTH} )
-else()
-	add_definitions( -DMAGICKCORE_QUANTUM_DEPTH=16 )
-endif()
-
-if(MAGICKCORE_HDRI_ENABLE)
-	add_definitions( -DMAGICKCORE_HDRI_ENABLE=${MAGICKCORE_HDRI_ENABLE} )
-else()
-	add_definitions( -DMAGICKCORE_HDRI_ENABLE=0 )
-endif()
-
-if(OPENSHOT_IMAGEMAGICK_COMPATIBILITY)
-	add_definitions( -DOPENSHOT_IMAGEMAGICK_COMPATIBILITY=${OPENSHOT_IMAGEMAGICK_COMPATIBILITY} )
-else()
-	add_definitions( -DOPENSHOT_IMAGEMAGICK_COMPATIBILITY=0 )
-endif()
-
 # Find the ImageMagick++ library
 find_package(ImageMagick COMPONENTS Magick++ MagickWand MagickCore)
 if(ImageMagick_FOUND)
@@ -85,15 +73,6 @@ if(ImageMagick_FOUND)
 
 	# define a global var (used in the C++)
 	add_definitions( -DUSE_IMAGEMAGICK=1 )
-endif()
-
-################# LIBOPENSHOT-AUDIO ###################
-# Find JUCE-based openshot Audio libraries
-if(NOT ENABLE_AUDIO_LIB)
-	find_package(OpenShotAudio 0.2.0 REQUIRED)
-
-	# Include Juce headers (needed for compile)
-	include_directories(${OpenShotAudio_INCLUDE_DIRS})
 endif()
 
 include_directories($<TARGET_PROPERTY:openshot_obj,INCLUDE_DIRECTORIES>)
@@ -127,34 +106,27 @@ set(OPENSHOT_TEST_FILES
   KeyFrame_Tests.cpp
   Point_Tests.cpp
   Settings_Tests.cpp
-  Timeline_Tests.cpp )
+  Timeline_Tests.cpp
+  )
 
 ################ TESTER EXECUTABLE #################
 # Create unit test executable (openshot-test)
 message (STATUS "Tests enabled, test executable will be built as tests/openshot-test")
 add_executable(openshot-test
   tests.cpp
-  ${OPENSHOT_TEST_FILES} )
+  ${OPENSHOT_TEST_FILES}
+  )
 
 set_property(TARGET openshot-test
 	PROPERTY
 	  POSITION_INDEPENDENT_CODE TRUE
-)
+  )
 
 # Link libraries to the new executable
-target_link_libraries(openshot-test ${UnitTest++_LIBRARIES})
-
-if(BUILD_INSTALLABLE)
-	target_link_libraries(openshot-test openshot)
-else()
-	target_link_libraries(openshot-test openshot_obj)
-endif()
-
-if(ENABLE_AUDIO_LIB)
-	target_link_libraries(openshot-test openshot-audio)
-else()
-	target_link_libraries(openshot-test OpenShot::Audio)
-endif()
+target_link_libraries(openshot-test
+  ${OPENSHOT_LIB_TARGETS}
+  ${UnitTest++_LIBRARIES}
+  )
 
 ##### RUNNING TESTS (make os_test / make test) #####
 # Hook up the 'make os_test' target to the 'openshot-test' executable

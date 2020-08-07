@@ -215,10 +215,10 @@ set_property(GLOBAL PROPERTY
 # Excessive backwards-compatibility. Note that this won't export all of
 # the compile definitions and extra libs that the target does, so it's
 # still preferable to use the target.
-set(OpenShotAudio_LIBRARY "${OpenShotAudio_LIBRARY}" PARENT_SCOPE)
-set(OpenShotAudio_LIBRARIES "${OpenShotAudio_LIBRARY}" PARENT_SCOPE)
-set(OpenShotAudio_INCLUDE_DIRS "${OpenShotAudio_INCLUDE_DIR}" PARENT_SCOPE)
-set(LIBOPENSHOT_AUDIO_LIBRARY "${OpenShotAudio_LIBRARY}" PARENT_SCOPE)
-set(LIBOPENSHOT_AUDIO_LIBRARIES "${OpenShotAudio_LIBRARY}" PARENT_SCOPE)
-set(LIBOPENSHOT_AUDIO_INCLUDE_DIR "${OpenShotAudio_INCLUDE_DIR}" PARENT_SCOPE)
-set(LIBOPENSHOT_AUDIO_INCLUDE_DIRS "${OpenShotAudio_INCLUDE_DIR}" PARENT_SCOPE)
+set(OpenShotAudio_LIBRARY "${OpenShotAudio_LIBRARY}")
+set(OpenShotAudio_LIBRARIES "${OpenShotAudio_LIBRARY}")
+set(OpenShotAudio_INCLUDE_DIRS "${OpenShotAudio_INCLUDE_DIR}")
+set(LIBOPENSHOT_AUDIO_LIBRARY "${OpenShotAudio_LIBRARY}")
+set(LIBOPENSHOT_AUDIO_LIBRARIES "${OpenShotAudio_LIBRARY}")
+set(LIBOPENSHOT_AUDIO_INCLUDE_DIR "${OpenShotAudio_INCLUDE_DIR}")
+set(LIBOPENSHOT_AUDIO_INCLUDE_DIRS "${OpenShotAudio_INCLUDE_DIR}")
