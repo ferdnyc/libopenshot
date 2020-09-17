@@ -30,6 +30,9 @@
 
 #include "../include/Frame.h"
 
+#include <thread>    // for std::this_thread::sleep_for
+#include <chrono>    // for std::chrono::milliseconds
+
 using namespace std;
 using namespace openshot;
 
@@ -480,6 +483,11 @@ const unsigned char* Frame::GetPixels()
 // Get pixel data (for only a single scan-line)
 const unsigned char* Frame::GetPixels(int row)
 {
+	// Check for blank image
+	if (!image)
+		// Fill with black
+		AddColor(width, height, color);
+
 	// Return array of pixel packets
 	return image->constScanLine(row);
 }
@@ -987,7 +995,7 @@ void Frame::Play()
 
 	// Output error (if any)
 	if (error.isNotEmpty()) {
-		cout << "Error on initialise(): " << error.toStdString() << endl;
+		cout << "Error on initialise(): " << error << endl;
 	}
 
 	juce::AudioSourcePlayer audioSourcePlayer;
@@ -1023,7 +1031,7 @@ void Frame::Play()
 	while (transport1.isPlaying())
 	{
 		cout << "playing" << endl;
-		usleep(1000000);
+		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
 	cout << "DONE!!!" << endl;

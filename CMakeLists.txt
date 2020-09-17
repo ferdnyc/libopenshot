@@ -54,7 +54,7 @@ OpenShot Library (libopenshot) is a free, open-source project that enables high-
 ]=])
 
 # Remove the dash and anything following, to get the #.#.# version for project()
-STRING(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
+string(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
 
 ################### SETUP PROJECT ###################
 # This will define the following variables
@@ -63,7 +63,7 @@ STRING(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
 # PROJECT_VERSION_MAJOR, libopenshot_VERSION_MAJOR
 # PROJECT_VERSION_MINOR, libopenshot_VERSION_MINOR
 # PROJECT_VERSION_PATCH, libopenshot_VERSION_PATCH
-PROJECT(libopenshot LANGUAGES C CXX VERSION ${VERSION_NUM})
+project(libopenshot LANGUAGES C CXX VERSION ${VERSION_NUM})
 
 message("
 Generating build files for OpenShot with CMake ${CMAKE_VERSION}
@@ -86,6 +86,7 @@ option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
 option(ENABLE_IWYU "Enable 'Include What You Use' scanner (CMake 3.3+)" OFF)
 option(ENABLE_TESTS "Build unit tests (requires UnitTest++)" ON)
 option(ENABLE_DOCS "Build API documentation (requires Doxygen)" ON)
+option(APPIMAGE_BUILD "Build to install in an AppImage (Linux only)" OFF)
 
 # Legacy commandline override
 if (DISABLE_TESTS)
@@ -101,27 +102,17 @@ if(DEFINED ENABLE_TESTS)
   set(ENABLE_TESTS ${ENABLE_TESTS} CACHE BOOL "Build unit tests (requires UnitTest++)" FORCE)
 endif()
 
-########## Configure Version.h header ##############
-configure_file(include/OpenShotVersion.h.in include/OpenShotVersion.h @ONLY)
-# We'll want that installed later
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/OpenShotVersion.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
-
 #### Work around a GCC < 9 bug with handling of _Pragma() in macros
 #### See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
 if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") AND
     (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "9.0.0"))
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -no-integrated-cpp")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -no-integrated-cpp")
 endif()
 
 #### Enable C++11 (for std::shared_ptr support)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-IF (WIN32)
-	SET_PROPERTY(GLOBAL PROPERTY WIN32 "WIN32")
-ENDIF(WIN32)
 
 ############## Code Coverage #########################
 if (DISABLE_TESTS AND ENABLE_COVERAGE)
@@ -151,6 +142,12 @@ endif()
 
 ############## PROCESS src/ DIRECTORIES ##############
 add_subdirectory(src)
+
+########## Configure Version.h header ##############
+configure_file(include/OpenShotVersion.h.in include/OpenShotVersion.h @ONLY)
+# We'll want that installed later
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/OpenShotVersion.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
 
 ################### DOCUMENTATION ###################
 # Find Doxygen (used for documentation)

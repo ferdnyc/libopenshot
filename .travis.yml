@@ -1,7 +1,4 @@
 language: cpp
-compiler: gcc
-os: linux
-dist: xenial
 
 # This section uses a rather esoteric (and tricky!) feature of YAML,
 # &aliases and *anchors, to build package lists out of sublists without
@@ -11,9 +8,8 @@ addons:
   apt:
     packages: &p_common  # Packages common to all Ubuntu builds
     - cmake
+    - libasound2-dev
     - libopenshot-audio-dev
-    - libmagick++-dev
-    - libunittest++-dev
     - libzmq3-dev
     - qtbase5-dev
     - qtmultimedia5-dev
@@ -26,17 +22,14 @@ addons:
     - libswscale-dev
     - libpostproc-dev
     - libswresample-dev
+    - libmagick++-dev
+    - libunittest++-dev
     - swig
     - doxygen
     - graphviz
     - curl
 
 jobs:
-
-  # The FFmpeg 3.2 backport PPA has gone missing
-  allow_failures:
-    - name: "FFmpeg 3.2 GCC (Ubuntu 16.04 Xenial)"
-
   include:
     - name: "Coverage + FFmpeg 3.4 GCC (Ubuntu 18.04 Bionic)"
       env:
@@ -57,19 +50,17 @@ jobs:
           - lcov
           - binutils-common # For c++filt
 
-    - name: "FFmpeg 4 GCC (Ubuntu 18.04 Bionic)"
+    - name: "FFmpeg 4 GCC (Ubuntu 20.04 Focal)"
       env:
         - BUILD_VERSION=ffmpeg4
         - CMAKE_EXTRA_ARGS=""
         - TEST_TARGET=test
       os: linux
-      dist: bionic
+      dist: focal
       addons:
         apt:
           sources:
           - sourceline: 'ppa:openshot.developers/libopenshot-daily'
-          - sourceline: 'ppa:beineri/opt-qt-5.12.3-bionic'
-          - sourceline: 'ppa:jonathonf/ffmpeg-4'
           packages:
           - *p_common
           - qt5-default
@@ -83,7 +74,7 @@ jobs:
           - libpostproc55
           - libswresample3
 
-    - name: "FFmpeg 3.4 Clang (Ubuntu 18.04 Bionic)"
+    - name: FFmpeg 3.4 Clang (Ubuntu 18.04 Bionic)
       env:
         - BUILD_VERSION=clang_ffmpeg34
         - CMAKE_EXTRA_ARGS=""
@@ -101,31 +92,6 @@ jobs:
           - libavresample-dev
           - libomp-dev
 
-    - name: "FFmpeg 3.2 GCC (Ubuntu 16.04 Xenial)"
-      env:
-        - BUILD_VERSION=ffmpeg32
-        - CMAKE_EXTRA_ARGS=""
-        - TEST_TARGET="os_test"
-      os: linux
-      dist: xenial
-      addons:
-        apt:
-          sources:
-          - sourceline: 'ppa:openshot.developers/libopenshot-daily'
-          - sourceline: 'ppa:jon-hedgerows/ffmpeg-backports'
-          packages:
-          - *p_common
-          - libavresample-dev
-          - libavcodec57
-          - libavdevice57
-          - libavfilter6
-          - libavformat57
-          - libavresample3
-          - libavutil55
-          - libpostproc54
-          - libswresample2
-          - libswscale4
-
     - name: "FFmpeg 2 GCC (Ubuntu 16.04 Xenial)"
       env:
         - BUILD_VERSION=ffmpeg2
@@ -141,14 +107,54 @@ jobs:
           packages:
           - *p_common
           - libavresample-dev
+    
+    - name: macOS Latest
+      env:
+      - BUILD_VERSION=ffmpeg4
+      - TEST_TARGET="test"
+      - CMAKE_EXTRA_ARGS="-DENABLE_RUBY=0"
+      - Qt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5
+      os: osx
+      osx_image: xcode11.3
+      compiler: clang
+      addons:
+        homebrew:
+          update: true
+          packages:
+          - cmake
+          - libomp
+          - qt
+          - imagemagick
+          - libvpx
+          - x264
+          - x265
+          - fdk-aac
+          - fdk-aac-encoder
+          - ffmpeg
+          - zeromq
+          - swig
+          - unittest-cpp
+          - rust
+
+before_script:
+  - mkdir -p  build
+  - if [ "x${TRAVIS_OS_NAME}" = "xosx" ]; then eval $(brew --env|grep -i cmake); fi
+  - if [ "x${TRAVIS_OS_NAME}" = "xosx" ]; then git clone https://github.com/OpenShot/libopenshot-audio; pushd libopenshot-audio; cmake -DCMAKE_BUILD_TYPE=Debug $(brew diy --name libopenshot-audio --version 0.2.0) .; cmake --build . -- VERBOSE=1; cmake --build . --target install; brew link --verbose libopenshot-audio; popd; fi
+  - if [ "x${TRAVIS_OS_NAME}" = "xosx" ]; then git clone https://github.com/zeromq/cppzmq; pushd cppzmq; cmake $(brew diy --verbose --name cppzmq --version $(sh ./version.sh)) -DCMAKE_BUILD_TYPE=Debug -DENABLE_DRAFTS=0 .; cmake --build .; cmake --build . --target install; brew link --verbose cppzmq; popd; fi
 
 script:
-  - mkdir -p build; cd build;
-  - cmake -DCMAKE_INSTALL_PREFIX:PATH="$TRAVIS_OS_NAME-x64" -DCMAKE_BUILD_TYPE:STRING="Debug" ${CMAKE_EXTRA_ARGS} ../
-  - make VERBOSE=1
-  - make ${TEST_TARGET}
-  - make install
+  - pushd build
+  - if [ "x${TRAVIS_OS_NAME}" = "xosx" ]; then echo "${CMAKE_EXTRA_ARGS}"; fi
+  - cmake -DCMAKE_INSTALL_PREFIX:PATH="$TRAVIS_OS_NAME-x64" -DCMAKE_BUILD_TYPE=Debug ${CMAKE_EXTRA_ARGS} ..
+  - cmake --build . -- VERBOSE=1
+  - cmake --build . --target ${TEST_TARGET} -- VERBOSE=1
+  - cmake --build . --target install -- VERBOSE=1
   - cd ..
 
 after_success:
   - if [ "x$TEST_TARGET" = "xcoverage" ]; then bash <(curl -s https://codecov.io/bash) -f build/coverage.info || echo "Codecov did not collect coverage reports"; fi
+
+after_failure:
+  - cat build/CMakeCache.txt
+  - if [ "x${TRAVIS_OS_NAME}" = "xosx" ]; then brew config; brew doctor; fi
+
