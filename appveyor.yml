@@ -38,12 +38,15 @@ for:
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-cmake
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-doxygen
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-ffmpeg
-        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-imagemagick
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-zeromq
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-swig
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python3-pyqt5
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-python3-pip"
   - cmd: pip3 install httplib2
+
+        # Disabled packages (too many dependencies/too slow)
+        # mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-imagemagick
+
 
   before_build:
   - cmd: set PATH=%PATH:C:\Program Files\Git\usr\bin;=%
@@ -72,9 +75,13 @@ for:
   - sh: export Qt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5
   install:
   - sh: brew install
-        gcc@9 libomp swig unittest-cpp rust qt
-        imagemagick libvpx x264 x265
+        gcc@9 libomp swig unittest-cpp qt
+        libvpx x264 x265
         fdk-aac fdk-aac-encoder ffmpeg zeromq
+
+        # Disabled (too many dependencies / too slow)
+        # rust imagemagick
+
   before_build:
   - sh: mkdir build-${PLAT_ARCH}
   - sh: eval $(brew --env|grep -i cmake)

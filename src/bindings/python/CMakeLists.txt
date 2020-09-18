@@ -36,20 +36,38 @@ endif()
 if (POLICY CMP0086)
   cmake_policy(SET CMP0086 OLD)
 endif()
-
-find_package(PythonInterp 3)
-find_package(PythonLibs 3)
-
-if (NOT PYTHONLIBS_FOUND OR NOT PYTHONINTERP_FOUND)
-  return()
+# Find Python components by LOCATION (path), not by VERSION
+if(POLICY CMP0094)
+  cmake_policy(SET CMP0094 NEW)
 endif()
 
-### Include Python header files
-include_directories(${PYTHON_INCLUDE_PATH})
+if(CMAKE_VERSION VERSION_GREATER 3.12)
+  find_package(Python COMPONENTS Interpreter Development)
+  if(NOT Python_FOUND)
+    return()
+  endif()
+else()
+  find_package(PythonInterp 3)
+  find_package(PythonLibs 3)
+  if (NOT PYTHONLIBS_FOUND OR NOT PYTHONINTERP_FOUND)
+    return()
+  endif()
+
+  if(NOT TARGET Python::Module)
+    # Older CMake versions (< 3.9) don't create find targets.
+    add_library(Python_LIB INTERFACE)
+    add_library(Python::Module ALIAS Python_LIB)
+    target_include_directories(Python_LIB INTERFACE
+      ${Python_INCLUDE_DIRS})
+    target_link_libraries(Python_LIB INTERFACE
+      ${Python_LIBRARIES})
+  endif()
+endif()
 
 if (CMAKE_VERSION VERSION_LESS 3.12)
-  ### Include project headers
+  ### Include headers
   include_directories(
+    "${PYTHON_INCLUDE_DIRS}"
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}/include")
 endif()
@@ -90,7 +108,7 @@ target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC openshot)
 ### On Windows/macOS, also link with the Python libraries
 ### (not advisable on Linux, per PEP 513)
 if (WIN32 OR APPLE)
-  target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC ${PYTHON_LIBRARIES})
+  target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC Python::Module)
 endif()
 
 ######### INSTALL PATH ########
@@ -124,6 +142,6 @@ message(STATUS "PYTHON_MODULE_PATH: ${CMAKE_INSTALL_PREFIX}/${PYTHON_MODULE_PATH
 ############### INSTALL HEADERS & LIBRARY ################
 ### Install Python bindings
 install(TARGETS ${SWIG_MODULE_pyopenshot_REAL_NAME}
-  DESTINATION ${PYTHON_MODULE_PATH} )
+  LIBRARY DESTINATION ${PYTHON_MODULE_PATH} )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/openshot.py
   DESTINATION ${PYTHON_MODULE_PATH} )

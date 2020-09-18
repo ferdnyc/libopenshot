@@ -79,6 +79,14 @@ include(GNUInstallDirs)
 # Collect and display summary of options/dependencies
 include(FeatureSummary)
 
+###
+### Adjust CMake policy where available
+###
+# Find Python components by LOCATION (path), not by VERSION
+if(POLICY CMP0094)
+  cmake_policy(SET CMP0094 NEW)
+endif()
+
 ################ OPTIONS ##################
 # Optional build settings for libopenshot
 option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
