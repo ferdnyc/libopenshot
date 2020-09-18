@@ -87,9 +87,9 @@ set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
 ### Link the new python wrapper library with libopenshot
 target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC openshot)
 
-### On Windows, also link with the Python libraries (not advisable on
-### Linux or MacOS, per PEP 513)
-if (WIN32)
+### On Windows/macOS, also link with the Python libraries
+### (not advisable on Linux, per PEP 513)
+if (WIN32 OR APPLE)
   target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC ${PYTHON_LIBRARIES})
 endif()
 
