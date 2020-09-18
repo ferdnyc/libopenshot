@@ -11,6 +11,7 @@ addons:
     - libasound2-dev
     - libopenshot-audio-dev
     - libzmq3-dev
+    - libpython3-dev
     - qtbase5-dev
     - qtmultimedia5-dev
     - libfdk-aac-dev
@@ -107,7 +108,7 @@ jobs:
           packages:
           - *p_common
           - libavresample-dev
-    
+
     - name: macOS Latest
       env:
       - BUILD_VERSION=ffmpeg4
