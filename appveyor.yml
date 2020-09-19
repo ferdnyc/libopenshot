@@ -22,6 +22,8 @@ install:
   - cmd: c:\msys64\usr\bin\bash -lc "pacman --needed --noconfirm -S
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-cmake
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-doxygen
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-qt5
+        mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-qtwebkit
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-ffmpeg
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-zeromq
         mingw%PLAT_BITS%/mingw-w64-%PLAT_ARCH%-swig"
