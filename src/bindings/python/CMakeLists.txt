@@ -42,32 +42,29 @@ if(POLICY CMP0094)
 endif()
 
 if(CMAKE_VERSION VERSION_GREATER 3.12)
-  find_package(Python COMPONENTS Interpreter Development)
-  if(NOT Python_FOUND)
+  find_package(Python3 COMPONENTS Interpreter Development)
+  if(NOT Python3_FOUND)
     return()
   endif()
+  set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+  set(PYTHON_TARGET Python3::Python)
 else()
   find_package(PythonInterp 3)
   find_package(PythonLibs 3)
   if (NOT PYTHONLIBS_FOUND OR NOT PYTHONINTERP_FOUND)
     return()
   endif()
-
-  if(NOT TARGET Python::Module)
+  if(NOT TARGET Python_LIB)
     # Older CMake versions (< 3.9) don't create find targets.
     add_library(Python_LIB INTERFACE)
-    add_library(Python::Module ALIAS Python_LIB)
     target_include_directories(Python_LIB INTERFACE
-      ${Python_INCLUDE_DIRS})
+    ${PYTHON_INCLUDE_DIRS})
     target_link_libraries(Python_LIB INTERFACE
-      ${Python_LIBRARIES})
+    ${PYTHON_LIBRARIES})
   endif()
-endif()
-
-if (CMAKE_VERSION VERSION_LESS 3.12)
-  ### Include headers
+  set(PYTHON_TARGET Python_LIB)
+  ## Include headers -- won't be pulled from targets
   include_directories(
-    "${PYTHON_INCLUDE_DIRS}"
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}/include")
 endif()
@@ -87,7 +84,7 @@ set_property(SOURCE openshot.i PROPERTY GENERATED_COMPILE_OPTIONS ${sw_flags})
 if (CMAKE_VERSION VERSION_GREATER 3.13)
   set_property(SOURCE openshot.i PROPERTY USE_TARGET_INCLUDE_DIRECTORIES True)
 elseif (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(SOURCE openshot.i PROPERTY
+  set_property(SOURCE openshot.i APPEND PROPERTY
     INCLUDE_DIRECTORIES $<TARGET_PROPERTY:openshot,INCLUDE_DIRECTORIES>)
 endif ()
 
@@ -104,44 +101,42 @@ set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
 
 ### Link the new python wrapper library with libopenshot
 target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC openshot)
-
-### On Windows/macOS, also link with the Python libraries
-### (not advisable on Linux, per PEP 513)
-if (WIN32 OR APPLE)
-  target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC Python::Module)
-endif()
+target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC ${PYTHON_TARGET})
 
 ######### INSTALL PATH ########
-if (NOT DEFINED PYTHON_MODULE_PATH AND DEFINED $ENV{PYTHON_MODULE_PATH})
-  set(PYTHON_MODULE_PATH $ENV{PYTHON_MODULE_PATH})
+if (NOT DEFINED PYTHON_INSTALL_PATH AND DEFINED $ENV{PYTHON_INSTALL_PATH})
+  set(PYTHON_INSTALL_PATH $ENV{PYTHON_INSTALL_PATH})
+endif()
+if (NOT DEFINED PYTHON_INSTALL_PATH AND DEFINED $ENV{PYTHON_MODULE_PATH})
+  set(PYTHON_INSTALL_PATH $ENV{PYTHON_MODULE_PATH})
 endif()
 
-if (NOT DEFINED PYTHON_MODULE_PATH)
+if (NOT DEFINED PYTHON_INSTALL_PATH)
   if (WIN32 OR APPLE)
-    set (PYTHON_MODULE_PATH "python")
+    set (PYTHON_INSTALL_PATH "python")
   endif()
 
   if (UNIX AND NOT APPLE)
     ### Check if the following Debian-friendly python module path exists
-    set(PYTHON_MODULE_PATH
+    set(PYTHON_INSTALL_PATH
       "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/dist-packages")
 
-    if (NOT EXISTS "${CMAKE_INSTALL_PREFIX}/${PYTHON_MODULE_PATH}")
+    if (NOT EXISTS "${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_PATH}")
       ### Calculate the python module path (using distutils)
       execute_process ( COMMAND ${PYTHON_EXECUTABLE} -c "\
 from distutils.sysconfig import get_python_lib; \
 print( get_python_lib( plat_specific=True, prefix='' ) )"
-        OUTPUT_VARIABLE PYTHON_MODULE_PATH
+        OUTPUT_VARIABLE PYTHON_INSTALL_PATH
         OUTPUT_STRIP_TRAILING_WHITESPACE )
     endif()
   endif()
 endif()
 
-message(STATUS "PYTHON_MODULE_PATH: ${CMAKE_INSTALL_PREFIX}/${PYTHON_MODULE_PATH}")
+message(STATUS "PYTHON_INSTALL_PATH: ${CMAKE_INSTALL_PREFIX}/${PYTHON_INSTALL_PATH}")
 
 ############### INSTALL HEADERS & LIBRARY ################
 ### Install Python bindings
 install(TARGETS ${SWIG_MODULE_pyopenshot_REAL_NAME}
-  LIBRARY DESTINATION ${PYTHON_MODULE_PATH} )
+  DESTINATION ${PYTHON_INSTALL_PATH} )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/openshot.py
-  DESTINATION ${PYTHON_MODULE_PATH} )
+  DESTINATION ${PYTHON_INSTALL_PATH} )
