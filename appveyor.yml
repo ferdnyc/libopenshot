@@ -48,7 +48,10 @@ build_script:
   - cmd: cmake --build build-%PLAT_ARCH% --target doc --verbose
   - cmd: cmake --install build-%PLAT_ARCH% --verbose
 
-test: off
+test_script:
+  - cmd: cd build-%PLAT_ARCH%\src\bindings\python
+  - cmd: python3 -c "import openshot; print(openshot.Version)"
+  - cmd: cd ..\..\..\..
 
 artifacts:
 - path: install-%PLAT_ARCH%

@@ -47,10 +47,10 @@ endif()
 ################ WINDOWS ##################
 # Set some compiler options for Windows
 # required for libopenshot-audio headers
-if (WIN32)
-  add_definitions( -DIGNORE_JUCE_HYPOT=1 )
-  set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -include cmath")
-endif()
+#if (WIN32)
+#  add_definitions( -DIGNORE_JUCE_HYPOT=1 )
+#  set(CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -include cmath")
+#endif()
 
 if (APPLE)
 	# If you still get errors compiling with GCC 4.8, mac headers need to be patched: http://hamelot.co.uk/programming/osx-gcc-dispatch_block_t-has-not-been-declared-invalid-typedef/
@@ -324,7 +324,10 @@ foreach(ff_comp IN LISTS all_comps)
     endif()
   endif()
 
+<<<<<<< Updated upstream
 endforeach()
+=======
+>>>>>>> Stashed changes
 
 ################### OPENMP #####################
 # Check for OpenMP (used for multi-core processing)
@@ -333,11 +336,25 @@ endforeach()
 find_package(OpenMP REQUIRED)
 
 if(NOT TARGET OpenMP::OpenMP_CXX)
+<<<<<<< Updated upstream
     # Older CMake versions (< 3.9) don't create find targets.
     add_library(OpenMP_TARGET INTERFACE)
     add_library(OpenMP::OpenMP_CXX ALIAS OpenMP_TARGET)
     target_compile_options(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
     target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
+=======
+  # Threading library -- uses IMPORTED target Threads::Threads (since CMake 3.1)
+  set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+  set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+  find_package(Threads REQUIRED)
+
+  # Older CMake versions (< 3.9) don't create find targets.
+  add_library(OpenMP_TARGET INTERFACE)
+  add_library(OpenMP::OpenMP_CXX ALIAS OpenMP_TARGET)
+  target_compile_options(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
+  target_link_libraries(OpenMP_TARGET INTERFACE Threads::Threads)
+  target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
+>>>>>>> Stashed changes
 endif()
 
 target_link_libraries(openshot PUBLIC OpenMP::OpenMP_CXX)

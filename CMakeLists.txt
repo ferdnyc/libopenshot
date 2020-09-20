@@ -56,6 +56,13 @@ OpenShot Library (libopenshot) is a free, open-source project that enables high-
 # Remove the dash and anything following, to get the #.#.# version for project()
 string(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
 
+# Enable CCache
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+endif()
+
 ################### SETUP PROJECT ###################
 # This will define the following variables
 # PROJECT_NAME
