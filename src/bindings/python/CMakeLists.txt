@@ -113,7 +113,7 @@ endif()
 
 if (NOT DEFINED PYTHON_INSTALL_PATH)
   if (WIN32 OR APPLE)
-    set (PYTHON_INSTALL_PATH "python")
+    set (PYTHON_INSTALL_PATH "${CMAKE_INSTALL_BINDIR}")
   endif()
 
   if (UNIX AND NOT APPLE)
@@ -140,3 +140,34 @@ install(TARGETS ${SWIG_MODULE_pyopenshot_REAL_NAME}
   DESTINATION ${PYTHON_INSTALL_PATH} )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/openshot.py
   DESTINATION ${PYTHON_INSTALL_PATH} )
+
+# On Windows, copy necessary DLLs as well
+if(WIN32)
+  include(CMakePrintHelpers)
+  cmake_print_properties(
+    TARGETS pyopenshot
+    PROPERTIES LINK_LIBRARIES LINK_DIRECTORIES)
+  cmake_print_properties(
+    DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+    PROPERTIES LINK_LIBRARIES LINK_DIRECTORIES)
+  install(CODE "
+    file(GET_RUNTIME_DEPENDENCIES
+      RESOLVED_DEPENDENCIES_VAR _deps
+      UNRESOLVED_DEPENDENCIES_VAR _missing_deps
+      LIBRARIES $<TARGET_FILE:pyopenshot>
+      DIRECTORIES
+        $<TARGET_GENEX_EVAL:pyopenshot,$<TARGET_PROPERTY:pyopenshot,LINK_LIBRARIES>>
+      PRE_EXCLUDE_REGEXES \"^api-ms-win\"
+      POST_EXCLUDE_REGEXES \"Windows[/\\\\]system32\"
+      )
+    message(STATUS \"Resolved Python deps:\")
+    foreach(_dll \${_deps})
+      message(STATUS \"  \${_dll}\")
+    endforeach()
+    message(STATUS \"Unresolved Python deps:\")
+    foreach(_dll \${_missing_deps})
+      message(STATUS \"  \${_dll}\")
+    endforeach()
+  ")
+endif()
+

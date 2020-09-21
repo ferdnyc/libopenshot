@@ -452,3 +452,33 @@ install(TARGETS openshot
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot
   FILES_MATCHING PATTERN "*.h")
+
+# On Windows, copy necessary DLLs as well
+if(WIN32)
+  include(CMakePrintHelpers)
+  cmake_print_properties(
+    TARGETS openshot
+    PROPERTIES LINK_LIBRARIES LINK_DIRECTORIES)
+  cmake_print_properties(
+    DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
+    PROPERTIES LINK_LIBRARIES LINK_DIRECTORIES)
+  install(CODE "
+    file(GET_RUNTIME_DEPENDENCIES
+      RESOLVED_DEPENDENCIES_VAR _deps
+      UNRESOLVED_DEPENDENCIES_VAR _missing_deps
+      LIBRARIES $<TARGET_FILE:openshot>
+      DIRECTORIES
+        $<TARGET_GENEX_EVAL:openshot,$<TARGET_PROPERTY:openshot,LINK_LIBRARIES>>
+      PRE_EXCLUDE_REGEXES \"^api-ms-win\"
+      POST_EXCLUDE_REGEXES \"Windows[/\\\\]system32\"
+      )
+    message(STATUS \"Resolved library deps:\")
+    foreach(_dll \${_deps})
+      message(STATUS \"  \${_dll}\")
+    endforeach()
+    message(STATUS \"Unresolved library deps:\")
+    foreach(_dll \${_missing_deps})
+      message(STATUS \"  \${_dll}\")
+    endforeach()
+  ")
+endif()
