@@ -53,7 +53,7 @@ STRING(REGEX REPLACE "\-.*$" "" VERSION_NUM "${PROJECT_VERSION_FULL}")
 # PROJECT_VERSION_MAJOR, libopenshot_VERSION_MAJOR
 # PROJECT_VERSION_MINOR, libopenshot_VERSION_MINOR
 # PROJECT_VERSION_PATCH, libopenshot_VERSION_PATCH
-PROJECT(libopenshot LANGUAGES C CXX VERSION ${VERSION_NUM})
+project(OpenShotLib LANGUAGES C CXX VERSION ${VERSION_NUM})
 
 message("
 Generating build files for OpenShot with CMake ${CMAKE_VERSION}
@@ -71,6 +71,7 @@ include(FeatureSummary)
 
 ################ OPTIONS ##################
 # Optional build settings for libopenshot
+option(USE_RPATH "Use INSTALL_RPATH_USE_LINK_PATH for self-contained packaging" OFF)
 option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
 option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
 option(ENABLE_IWYU "Enable 'Include What You Use' scanner (CMake 3.3+)" OFF)
@@ -88,6 +89,10 @@ endif()
 if(DEFINED ENABLE_TESTS)
   set(ENABLE_TESTS ${ENABLE_TESTS} CACHE BOOL "Build unit tests (requires UnitTest++)" FORCE)
 endif()
+
+add_feature_info("Use RPATH" USE_RPATH
+  "Build shared libs with RPATH set (if supported)"
+)
 
 #### Work around a GCC < 9 bug with handling of _Pragma() in macros
 #### See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
@@ -142,6 +147,56 @@ configure_file(src/OpenShotVersion.h.in src/OpenShotVersion.h @ONLY)
 # We'll want that installed later
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/OpenShotVersion.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+
+###
+### Packaging
+###
+
+# Export configuration to build tree
+export(EXPORT OpenShotLibTargets
+  FILE OpenShotLibTargets.cmake
+  NAMESPACE OpenShot::
+)
+
+# (Borrowed from cppzmq/CMakeList.txt)
+# GNUInstallDirs "DATADIR" wrong here; CMake search path wants "share".
+set(CMAKECONFIG_INSTALL_DIR "share/cmake/${PROJECT_NAME}" CACHE STRING "install path for CMake configuration")
+
+# Install EXPORTED configuration
+install(
+  EXPORT OpenShotLibTargets
+  FILE OpenShotLibTargets.cmake
+  NAMESPACE OpenShot::
+  DESTINATION ${CMAKECONFIG_INSTALL_DIR}
+)
+
+# Package the exported targets for external consumers
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+  cmake/Config.cmake.in
+  OpenShotLibConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/openshot/
+)
+
+# Write version file for eported config
+write_basic_package_version_file(
+  OpenShotLibConfigVersion.cmake
+  VERSION "${PROJECT_VERSION}"
+  COMPATIBILITY AnyNewerVersion
+)
+
+# Export the configuration at install time
+install(FILES
+  cmake/Modules/FindBlackMagic.cmake
+  cmake/Modules/FindFFmpeg.cmake
+  cmake/Modules/Findjsoncpp.cmake
+  cmake/Modules/FindResvg.cmake
+  cmake/Modules/FindZeroMQ.cmake
+  "${CMAKE_CURRENT_BINARY_DIR}/OpenShotLibConfig.cmake"
+  "${CMAKE_CURRENT_BINARY_DIR}/OpenShotLibConfigVersion.cmake"
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/openshot/
+)
 
 
 ################### DOCUMENTATION ###################

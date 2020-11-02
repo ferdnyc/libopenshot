@@ -138,13 +138,64 @@ target_sources(openshot PRIVATE
   ${QT_PLAYER_SOURCES}
   )
 
+
 # Set SONAME and other library properties
 set_target_properties(openshot PROPERTIES
   AUTOMOC ON
   VERSION ${PROJECT_VERSION}
   SOVERSION ${PROJECT_SO_VERSION}
-  INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+  EXPORT_NAME Lib
 )
+
+# Require language features we use
+if(CMAKE_VERSION VERSION_GREATER 3.8)
+  target_compile_features(openshot PUBLIC
+    cxx_std_11
+    cxx_auto_type
+    cxx_defaulted_functions
+    cxx_delegating_constructors
+    cxx_defaulted_move_initializers
+    cxx_deleted_functions
+    cxx_noexcept
+    cxx_nullptr
+    cxx_override
+    cxx_range_for
+    cxx_raw_string_literals
+    cxx_reference_qualified_functions
+    cxx_right_angle_brackets
+    cxx_sizeof_member
+  )
+else()
+  set_target_properties(openshot PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+  )
+endif()
+
+# Configure packaging/FRAMEWORK options and RPATH
+if(USE_RPATH)
+  set_target_properties(openshot PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+    BUILD_RPATH_USE_ORIGIN TRUE
+
+    # BUILD_WITH_INSTALL_RPATH TRUE
+  )
+  if(APPLE)
+    set_target_properties(openshot PROPERTIES
+      FRAMEWORK TRUE
+      FRAMEWORK_VERSION A
+      MACOSX_FRAMEWORK_IDENTIFIER org.openshot.OpenShotLib
+      # MACOSX_FRAMEWORK_INFO_PLIST Info.plist
+      SOVERSION ${PROJECT_SO_VERSION}.0.0
+    )
+  endif()
+else()
+  set_target_properties(openshot PROPERTIES
+    INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+    MACOSX_RPATH OFF
+  )
+endif()
 
 # Location of our includes, both internally and when installed
 target_include_directories(openshot
@@ -170,7 +221,7 @@ find_package(ImageMagick COMPONENTS Magick++ MagickWand MagickCore)
 
 if(ImageMagick_FOUND)
   if(NOT TARGET ImageMagick::Magick++ AND NOT TARGET Magick++_TARGET)
-    add_library(Magick++_TARGET INTERFACE)
+    add_library(Magick++_TARGET IMPORTED GLOBAL INTERFACE)
 
     # Include ImageMagick++ headers (needed for compile)
     set_property(TARGET Magick++_TARGET APPEND PROPERTY
@@ -390,6 +441,7 @@ endif()
 
 # Install primary library
 install(TARGETS openshot
+  EXPORT OpenShotLibTargets
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -400,6 +452,7 @@ install(
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot
   FILES_MATCHING PATTERN "*.h"
 )
+
 
 ############### CPACK PACKAGING ##############
 if(MINGW)
