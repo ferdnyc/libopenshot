@@ -72,14 +72,17 @@ include(FeatureSummary)
 ################ OPTIONS ##################
 # Optional build settings for libopenshot
 option(USE_RPATH "Use INSTALL_RPATH_USE_LINK_PATH for self-contained packaging" OFF)
+option(PYTHON_BUNDLE "Build and install the library for incorporation into a Python package" OFF)
+
 option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
 option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
+option(ENABLE_MAGICK "Use ImageMagick, if available" ON)
+
 option(ENABLE_IWYU "Enable 'Include What You Use' scanner (CMake 3.3+)" OFF)
 option(ENABLE_TESTS "Build unit tests (requires UnitTest++)" ON)
 option(ENABLE_COVERAGE "Scan test coverage using gcov and report" OFF)
 option(ENABLE_DOCS "Build API documentation (requires Doxygen)" ON)
 option(APPIMAGE_BUILD "Build to install in an AppImage (Linux only)" OFF)
-option(ENABLE_MAGICK "Use ImageMagick, if available" ON)
 
 # Legacy commandline override
 if (DISABLE_TESTS)
@@ -91,24 +94,18 @@ if(DEFINED ENABLE_TESTS)
 endif()
 
 add_feature_info("Use RPATH" USE_RPATH
-  "Build shared libs with RPATH set (if supported)"
+  "Build shared libs with RPATH set (on supported platforms)"
 )
+add_feature_info("Python bundling" PYTHON_BUNDLE "Customize library build for Python integration")
 
-#### Work around a GCC < 9 bug with handling of _Pragma() in macros
-#### See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
-if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") AND
-    (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "9.0.0"))
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -no-integrated-cpp")
+# Bundling requires USE_RPATH
+if(PYTHON_BUNDLE)
+  set(USE_RPATH TRUE CACHE BOOL FORCE "")
 endif()
 
-#### Enable C++11 (for std::shared_ptr support)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-IF (WIN32)
-	SET_PROPERTY(GLOBAL PROPERTY WIN32 "WIN32")
-ENDIF(WIN32)
+if(WIN32)
+	set_property(GLOBAL PROPERTY WIN32 "WIN32 flag for build conditionals")
+endif()
 
 ############## Code Coverage #########################
 if (ENABLE_COVERAGE AND NOT ENABLE_TESTS)
@@ -138,6 +135,12 @@ add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(bindings)
 
+if(PYTHON_BUNDLE)
+  set(_header_destination include/libopenshot)
+else()
+  set(_header_destination ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+endif()
+
 ###
 ### Configure Version.h header
 ###
@@ -146,7 +149,7 @@ add_subdirectory(bindings)
 configure_file(src/OpenShotVersion.h.in src/OpenShotVersion.h @ONLY)
 # We'll want that installed later
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/OpenShotVersion.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+  DESTINATION ${_header_destination})
 
 ###
 ### Packaging
@@ -173,10 +176,51 @@ install(
 # Package the exported targets for external consumers
 include(CMakePackageConfigHelpers)
 
+# Configure the dependencies to embed in our EXPORTED config
+if(HAVE_CPPZMQ)
+  set(EXPORT_CPPZMQ_DEPENDENCY "find_dependency(cppzmq)")
+endif()
+if(HAVE_RESVG)
+  set(EXPORT_RESVG_DEPENDENCY "find_dependency(Resvg)")
+endif()
+if(HAVE_IMAGEMAGICK)
+  set(EXPORT_MAGICK_DEPENDENCY [[
+    find_dependency(ImageMagick COMPONENTS Magick++ MagickWand MagickCore)
+
+    if(ImageMagick_FOUND)
+      if(NOT TARGET ImageMagick::Magick++ AND NOT TARGET Magick++_TARGET)
+        add_library(Magick++_TARGET IMPORTED GLOBAL INTERFACE)
+
+        # Include ImageMagick++ headers (needed for compile)
+        set_property(TARGET Magick++_TARGET APPEND PROPERTY
+          INTERFACE_INCLUDE_DIRECTORIES ${ImageMagick_INCLUDE_DIRS})
+
+        # Set the Quantum Depth that ImageMagick was built with (default to 16 bits)
+        if(NOT DEFINED MAGICKCORE_QUANTUM_DEPTH)
+          set(MAGICKCORE_QUANTUM_DEPTH 16)
+        endif()
+        if(NOT DEFINED MAGICKCORE_HDRI_ENABLE)
+          set(MAGICKCORE_HDRI_ENABLE 0)
+        endif()
+
+        set_property(TARGET Magick++_TARGET APPEND PROPERTY
+          INTERFACE_COMPILE_DEFINITIONS
+            MAGICKCORE_QUANTUM_DEPTH=${MAGICKCORE_QUANTUM_DEPTH})
+        set_property(TARGET Magick++_TARGET APPEND PROPERTY
+          INTERFACE_COMPILE_DEFINITIONS
+            MAGICKCORE_HDRI_ENABLE=${MAGICKCORE_HDRI_ENABLE})
+
+        target_link_libraries(Magick++_TARGET INTERFACE
+          ${ImageMagick_LIBRARIES})
+      endif()
+    endif()
+    ]]
+  )
+endif()
 configure_package_config_file(
   cmake/Config.cmake.in
   OpenShotLibConfig.cmake
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/openshot/
+  INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR}
 )
 
 # Write version file for eported config
@@ -195,7 +239,7 @@ install(FILES
   cmake/Modules/FindZeroMQ.cmake
   "${CMAKE_CURRENT_BINARY_DIR}/OpenShotLibConfig.cmake"
   "${CMAKE_CURRENT_BINARY_DIR}/OpenShotLibConfigVersion.cmake"
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/openshot/
+  DESTINATION ${CMAKECONFIG_INSTALL_DIR}
 )
 
 

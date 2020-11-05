@@ -6,8 +6,8 @@
 #
 # Copyright (c) 2008-2019 OpenShot Studios, LLC
 # <http://www.openshotstudios.com/>. This file is part of
-# OpenShot Library (libopenshot), an open-source project dedicated to 
-# delivering high quality video editing and animation solutions to the 
+# OpenShot Library (libopenshot), an open-source project dedicated to
+# delivering high quality video editing and animation solutions to the
 # world. For more information visit <http://www.openshot.org/>.
 #
 # OpenShot Library (libopenshot) is free software: you can redistribute it
@@ -24,20 +24,25 @@
 # along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
-IF(NOT DEFINED ENABLE_PYTHON)
-    SET(ENABLE_PYTHON 1)
-ENDIF()
+# Skip if we're building a bundled library.
+# Bindings will be compiled and packaged in the parent project
+if(PYTHON_BUNDLE)
+  return()
+endif()
 
-IF(NOT DEFINED ENABLE_RUBY)
+if(NOT DEFINED ENABLE_PYTHON)
+    SET(ENABLE_PYTHON 1)
+endif()
+
+if(NOT DEFINED ENABLE_RUBY)
     SET(ENABLE_RUBY 1)
-ENDIF()
+endif()
 
 ############### INCLUDE EACH LANGUAGE BINDING ################
-IF (ENABLE_PYTHON)
+if(ENABLE_PYTHON)
     add_subdirectory(python)
-ENDIF (ENABLE_PYTHON)
+endif()
 
-IF (ENABLE_RUBY)
+if(ENABLE_RUBY)
     add_subdirectory(ruby)
-ENDIF (ENABLE_RUBY)
-
+endif()

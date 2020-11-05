@@ -127,9 +127,6 @@ set(QT_PLAYER_SOURCES
   Qt/VideoRenderer.cpp
   Qt/VideoRenderWidget.cpp)
 
-# Disable RPATH
-set(CMAKE_MACOSX_RPATH 0)
-
 ############### CREATE LIBRARY #################
 # Create shared openshot library
 add_library(openshot SHARED)
@@ -146,7 +143,7 @@ set_target_properties(openshot PROPERTIES
   AUTOMOC ON
   VERSION ${PROJECT_VERSION}
   SOVERSION ${PROJECT_SO_VERSION}
-  EXPORT_NAME Lib
+  EXPORT_NAME Lib  # Exports as OpenShot::Lib target
 )
 
 # Require language features we use
@@ -176,22 +173,12 @@ else()
 endif()
 
 # Configure packaging/FRAMEWORK options and RPATH
-if(USE_RPATH)
+if(USE_RPATH AND UNIX AND NOT APPLE)
   set_target_properties(openshot PROPERTIES
+    INSTALL_RPATH "$ORIGIN"
     INSTALL_RPATH_USE_LINK_PATH TRUE
     BUILD_RPATH_USE_ORIGIN TRUE
-
-    # BUILD_WITH_INSTALL_RPATH TRUE
-  )
-  if(APPLE)
-    set_target_properties(openshot PROPERTIES
-      FRAMEWORK TRUE
-      FRAMEWORK_VERSION A
-      MACOSX_FRAMEWORK_IDENTIFIER org.openshot.OpenShotLib
-      # MACOSX_FRAMEWORK_INFO_PLIST Info.plist
-      SOVERSION ${PROJECT_SO_VERSION}.0.0
     )
-  endif()
 else()
   set_target_properties(openshot PROPERTIES
     INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
@@ -209,9 +196,21 @@ target_include_directories(openshot
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libopenshot>)
 
+#### Work around a GCC < 9 bug with handling of _Pragma() in macros
+#### See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
+if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") AND
+    (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "9.0.0"))
+  # Public because it'll affect any compile using our headers
+  target_compile_options(openshot PUBLIC "-no-integrated-cpp")
+endif()
+
+add_library(OpenShot::Lib ALIAS openshot)
+
 ################# LIBOPENSHOT-AUDIO ###################
 # Find JUCE-based openshot Audio libraries
-find_package(OpenShotAudio 0.2.0 REQUIRED)
+if(NOT TARGET OpenShot::Audio)
+  find_package(OpenShotAudio 0.2.0 REQUIRED)
+endif()
 target_link_libraries(openshot PUBLIC OpenShot::Audio)
 
 ###
@@ -372,6 +371,7 @@ endif()
 # Include cppzmq headers, if not bundled into libzmq
 if (TARGET cppzmq)
   target_link_libraries(openshot PUBLIC cppzmq)
+  set(HAVE_CPPZMQ TRUE CACHE BOOL "Used separate cppzmq target in build" FORCE)
 endif()
 
 ###
@@ -437,15 +437,28 @@ endif()
 
 # Install primary library
 install(TARGETS openshot
-  EXPORT OpenShotLibTargets
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+  EXPORT OpenShotLibTargets)
+
+if(PYTHON_BUNDLE)
+  set(_header_destination include/libopenshot)
+  install(TARGETS openshot
+    LIBRARY DESTINATION libopenshot
+    RUNTIME DESTINATION libopenshot
+    INCLUDES DESTINATION ${_header_destination}
+  )
+else()
+  set(_header_destination ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+  install(TARGETS openshot
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${_header_destination}
+  )
+endif()
 
 install(
   DIRECTORY .
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot
+  DESTINATION ${_header_destination}
   FILES_MATCHING PATTERN "*.h"
 )
 
