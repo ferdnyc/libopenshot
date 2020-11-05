@@ -1,68 +1,72 @@
 # - Try to find the BlackMagic DeckLinkAPI
 # Once done this will define
-#  
+#
 #  BLACKMAGIC_FOUND        - system has BlackMagic DeckLinkAPI installed
 #  BLACKMAGIC_INCLUDE_DIR  - the include directory containing DeckLinkAPIDispatch.cpp
 #  BLACKMAGIC_LIBRARY_DIR  - the directory containing libDeckLinkAPI.so
-#   
+#
+include(FindPackageHandleStandardArgs)
 
-# A user-defined environment variable is required to find the BlackMagic SDK
-if(NOT EXISTS "$ENV{BLACKMAGIC_DIR}")
-  message("-- Note: BLACKMAGIC_DIR environment variable is not defined")
-endif(NOT EXISTS "$ENV{BLACKMAGIC_DIR}")
+# # A user-defined environment variable is required to find the BlackMagic SDK
+# if(NOT DEFINED ENV{BLACKMAGIC_DIR})
+#   message(STATUS "Note: BLACKMAGIC_DIR environment variable is not defined")
+# endif()
 
-IF (WIN32)
-	# WINDOWS
-	FIND_PATH( BLACKMAGIC_INCLUDE_DIR DeckLinkAPI.h
-			   PATHS $ENV{BLACKMAGIC_DIR}/Win/include/
-			   		 "/home/jonathan/Blackmagic DeckLink SDK 10.3.1/Win/include/" )
+find_path(BlackMagic_INCLUDE_DIR DeckLinkAPI.h
+  PATHS
+    $ENV{BLACKMAGIC_DIR}
+    ${BlackMagic_ROOT}
+    ${BLACKMAGIC_ROOT}
+    ${BLACKMAGIC_SDK_DIR}
+    thirdparty/Blackmagic*
+  	"/home/jonathan/Blackmagic DeckLink SDK 10.3.1"
+  PATH_SUFFIXES
+    Win/include
+    Mac/include
+    Linux/include
+    include
+    include/Blackmagic
+    )
 
-	FIND_LIBRARY( BLACKMAGIC_LIBRARY_DIR DeckLinkAPI
-			  PATHS /usr/lib/
-					/usr/local/lib/
-					$ENV{BLACKMAGIC_DIR}/lib/ )
+find_library(BlackMagic_LIBRARY DeckLinkAPI
+  PATHS
+    $ENV{BLACKMAGIC_DIR}
+    ${BlackMagic_ROOT}
+    ${BLACKMAGIC_ROOT}
+    ${BLACKMAGIC_SDK_DIR}
+    thirdparty/Blackmagic*
+  PATH_SUFFIXES
+    Win
+    Mac
+    Linux
+  )
 
-ELSE (WIN32)
-	IF   (UNIX)
-		IF   (APPLE)
-			# APPLE
-			FIND_PATH( BLACKMAGIC_INCLUDE_DIR DeckLinkAPI.h
-					   PATHS $ENV{BLACKMAGIC_DIR}/Mac/include/
-					   		 "/home/jonathan/Blackmagic DeckLink SDK 10.3.1/Mac/include/" )
-
-			FIND_LIBRARY( BLACKMAGIC_LIBRARY_DIR DeckLinkAPI
-					  PATHS /usr/lib/
-							/usr/local/lib/
-							$ENV{BLACKMAGIC_DIR}/lib/ )
-
-		ELSE (APPLE)
-			# LINUX
-			FIND_PATH( BLACKMAGIC_INCLUDE_DIR DeckLinkAPI.h
-					   PATHS $ENV{BLACKMAGIC_DIR}/Linux/include/
-					   		 "/home/jonathan/Blackmagic DeckLink SDK 10.3.1/Linux/include/" )
-
-			FIND_LIBRARY( BLACKMAGIC_LIBRARY_DIR DeckLinkAPI
-					  PATHS /usr/lib/
-							/usr/local/lib/
-							$ENV{BLACKMAGIC_DIR}/lib/ )
-
-		ENDIF(APPLE)
-	ENDIF(UNIX)
-ENDIF(WIN32)
-
-SET( BLACKMAGIC_FOUND FALSE )
-
-IF ( BLACKMAGIC_INCLUDE_DIR AND BLACKMAGIC_LIBRARY_DIR )
-    SET ( BLACKMAGIC_FOUND TRUE )
-ENDIF ( BLACKMAGIC_INCLUDE_DIR AND BLACKMAGIC_LIBRARY_DIR )
-
-MARK_AS_ADVANCED(
-  BLACKMAGIC_INCLUDE_DIR
-  BLACKMAGIC_LIBRARY_DIR
+mark_as_advanced(
+  BlackMagic_INCLUDE_DIR
+  BlackMagic_LIBRARY_DIR
 )
 
-include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set BLACKMAGIC_FOUND to TRUE
-# if all listed variables are TRUE
-find_package_handle_standard_args(BLACKMAGIC  DEFAULT_MSG
-                                  BLACKMAGIC_LIBRARY_DIR BLACKMAGIC_INCLUDE_DIR)
+find_package_handle_standard_args(
+  BlackMagic
+  DEFAULT_MSG
+  BlackMagic_LIBRARY_DIR
+  BlackMagic_INCLUDE_DIR
+)
+
+if(BlackMagic_FOUND)
+  if(NOT TARGET BlackMagic::DeckLink)
+    message(STATUS "Creating IMPORTED target BlackMagic::DeckLink")
+
+    add_library(BlackMagic::DeckLink UNKNOWN IMPORTED)
+
+    set_target_properties(BlackMagic::DeckLink PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${BlackMagic_INCLUDE_DIR}")
+
+    set_property(TARGET BlackMagic::DeckLink APPEND PROPERTY
+      INTERFACE_COMPILE_DEFINITIONS "HAVE_BLACKMAGIC=1")
+
+    set_property(TARGET BlackMagic::DeckLink APPEND PROPERTY
+      INTERFACE_COMPILE_DEFINITIONS "USE_BLACKMAGIC=1")
+
+    set_property(TARGET BlackMagic::DeckLink APPEND PROPERTY
+      IMPORTED_LOCATION ${BlackMagic_LIBRARY})

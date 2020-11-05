@@ -45,18 +45,6 @@ set_package_properties(UnitTest++ PROPERTIES
   PURPOSE "Unit testing framework")
 
 
-################# BLACKMAGIC DECKLINK ###################
-if(ENABLE_BLACKMAGIC)
-	# Find BlackMagic DeckLinkAPI libraries
-	find_package(BlackMagic)
-
-	if(BLACKMAGIC_FOUND)
-		# Include Blackmagic headers (needed for compile)
-		include_directories(${BLACKMAGIC_INCLUDE_DIR})
-	endif()
-endif()
-
-
 ###############  SET TEST SOURCE FILES  #################
 set(OPENSHOT_TEST_FILES
   Cache_Tests.cpp

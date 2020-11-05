@@ -401,27 +401,21 @@ if (TARGET Resvg::Resvg)
   mark_as_advanced(HAVE_RESVG)
 endif()
 
-################# BLACKMAGIC DECKLINK ###################
-# Find BlackMagic DeckLinkAPI libraries
+###
+### BLACKMAGIC DECKLINK
+###
 if (ENABLE_BLACKMAGIC)
   find_package(BlackMagic)
-
-  if (BLACKMAGIC_FOUND)
+  if(TARGET BlackMagic::DeckLink)
     # BlackMagic related files
     target_sources(openshot PRIVATE
       DecklinkInput.cpp
       DecklinkReader.cpp
       DecklinkOutput.cpp
-      DecklinkWriter.cpp)
-
-    # Include Blackmagic headers (needed for compile)
-    target_include_directories(openshot PRIVATE ${BLACKMAGIC_INCLUDE_DIR})
-
+      DecklinkWriter.cpp
+    )
     # Link libopenshot with BlackMagic libs
-    target_link_libraries(openshot PUBLIC ${BLACKMAGIC_LIBRARY_DIR})
-
-    # define a preprocessor macro (used in the C++)
-    target_compile_definitions(openshot PUBLIC -DUSE_BLACKMAGIC=1)
+    target_link_libraries(openshot PUBLIC BlackMagic::DeckLink)
     list(APPEND CMAKE_SWIG_FLAGS -DUSE_BLACKMAGIC=1)
   endif()
 endif()
