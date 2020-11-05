@@ -1,9 +1,6 @@
-#ifndef OPENSHOT_EFFECTS_H
-#define OPENSHOT_EFFECTS_H
-
 /**
  * @file
- * @brief This header includes all commonly used effects for libopenshot, for ease-of-use.
+ * @brief Source file for Timeline class
  * @author Jonathan Thomas <jonathan@openshot.org>
  *
  * @ref License
@@ -31,22 +28,14 @@
  * along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* Effects */
-#include "effects/Bars.h"
-#include "effects/Blur.h"
-#include "effects/Brightness.h"
-#include "effects/Caption.h"
-#include "effects/ChromaKey.h"
-#include "effects/ColorShift.h"
-#include "effects/Crop.h"
-#include "effects/Deinterlace.h"
-#include "effects/Hue.h"
-#include "effects/Mask.h"
-#include "effects/Negate.h"
-#include "effects/Pixelate.h"
-#include "effects/Saturation.h"
-#include "effects/Shift.h"
-#include "effects/Wave.h"
+#include "TimelineBase.h"
 
+using namespace openshot;
 
-#endif
+/// Constructor for the base timeline
+TimelineBase::TimelineBase()
+{
+	// Init preview size (default)
+	preview_width = 1920;
+	preview_height = 1080;
+}
