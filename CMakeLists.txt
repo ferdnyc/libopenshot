@@ -37,7 +37,7 @@ For more information, please visit <http://www.openshot.org/>.
 -----------------------------------------------------------------")
 
 ################ ADD CMAKE MODULES ##################
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
 
 ################ PROJECT VERSION ####################
 set(PROJECT_VERSION_FULL "0.2.5-dev2")
