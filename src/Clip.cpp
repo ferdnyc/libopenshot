@@ -245,14 +245,11 @@ Clip::~Clip()
 /// Set the current reader
 void Clip::Reader(ReaderBase* new_reader)
 {
-	// set reader pointer
 	reader = new_reader;
-
-	// set parent
-	reader->ParentClip(this);
-
-	// Init reader info struct and cache size
-	init_reader_settings();
+	if (reader) {
+		reader->ParentClip(this);
+		init_reader_settings();
+	}
 }
 
 /// Get the current reader
