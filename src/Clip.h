@@ -33,19 +33,24 @@
 
 #include <memory>
 #include <string>
-#include <QtGui/QImage>
-#include "AudioResampler.h"
+
+#include <QImage>
+
 #include "ClipBase.h"
 #include "Color.h"
 #include "Enums.h"
 #include "EffectBase.h"
-#include "Effects.h"
-#include "EffectInfo.h"
-#include "Fraction.h"
 #include "Frame.h"
 #include "KeyFrame.h"
 #include "ReaderBase.h"
+
 #include "JuceHeader.h"
+
+// Forward decls
+namespace openshot {
+	class AudioResampler;
+	class CacheMemory;
+}
 
 namespace openshot {
 
