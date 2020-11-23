@@ -260,180 +260,187 @@ void Clip::Reader(ReaderBase* new_reader)
 /// Get the current reader
 ReaderBase* Clip::Reader()
 {
-	if (reader)
+	if (reader) {
 		return reader;
-	else
-		// Throw error if reader not initialized
-		throw ReaderClosed("No Reader has been initialized for this Clip.  Call Reader(*reader) before calling this method.");
+	} else {
+		throw ReaderClosed(
+			"No Reader has been initialized for this Clip. "
+			"Call Reader(*reader) before calling this method.");
+	}
 }
 
 // Open the internal reader
 void Clip::Open()
 {
-	if (reader)
-	{
-		// Open the reader
-		reader->Open();
-		is_open = true;
-
-		// Copy Reader info to Clip
-		info = reader->info;
-
-		// Set some clip properties from the file reader
-		if (end == 0.0)
-			End(reader->info.duration);
+	if (!reader) {
+		throw ReaderClosed(
+			"No Reader has been initialized for this Clip. "
+			"Call Reader(*reader) before calling this method.");
 	}
-	else
-		// Throw error if reader not initialized
-		throw ReaderClosed("No Reader has been initialized for this Clip.  Call Reader(*reader) before calling this method.");
+	// Open the reader
+	reader->Open();
+	is_open = true;
+
+	// Copy Reader info to Clip
+	info = reader->info;
+
+	// Set some clip properties from the file reader
+	if (end == 0.0)
+		End(reader->info.duration);
 }
 
 // Close the internal reader
 void Clip::Close()
 {
 	is_open = false;
-	if (reader) {
-		ZmqLogger::Instance()->AppendDebugMethod("Clip::Close");
 
-		// Close the reader
-		reader->Close();
+	if (!reader) {
+		throw ReaderClosed(
+			"No Reader has been initialized for this Clip. "
+			"Call Reader(*reader) before calling this method.");
 	}
-	else
-		// Throw error if reader not initialized
-		throw ReaderClosed("No Reader has been initialized for this Clip.  Call Reader(*reader) before calling this method.");
+
+	ZmqLogger::Instance()->AppendDebugMethod("Clip::Close");
+	reader->Close();
 }
 
 // Get end position of clip (trim end of video), which can be affected by the time curve.
 float Clip::End() const
 {
-	// if a time curve is present, use its length
-	if (time.GetCount() > 1)
-	{
-		// Determine the FPS fo this clip
-		float fps = 24.0;
-		if (reader)
-			// file reader
-			fps = reader->info.fps.ToFloat();
-		else
-			// Throw error if reader not initialized
-			throw ReaderClosed("No Reader has been initialized for this Clip.  Call Reader(*reader) before calling this method.");
-
-		return float(time.GetLength()) / fps;
-	}
-	else
-		// just use the duration (as detected by the reader)
+	// if no time curve, just use the current duration
+	if (time.GetCount() <= 1)
 		return end;
+
+	if (!reader) {
+		throw ReaderClosed(
+			"No Reader has been initialized for this Clip. "
+			"Call Reader(*reader) before calling this method.");
+	}
+
+	float fps = reader->info.fps.ToFloat();
+	return float(time.GetLength()) / fps;
 }
 
 // Create an openshot::Frame object for a specific frame number of this reader.
 std::shared_ptr<Frame> Clip::GetFrame(int64_t frame_number)
 {
-	// Check for open reader (or throw exception)
-	if (!is_open)
-		throw ReaderClosed("The Clip is closed.  Call Open() before calling this method.");
-
-	if (reader)
-	{
-		// Adjust out of bounds frame number
-		frame_number = adjust_frame_number_minimum(frame_number);
-
-		// Get the original frame and pass it to GetFrame overload
-		std::shared_ptr<Frame> original_frame = GetOrCreateFrame(frame_number);
-		return GetFrame(original_frame, frame_number);
+	if (!reader) {
+		throw ReaderClosed(
+			"No Reader has been initialized for this Clip. "
+			"Call Reader(*reader) before calling this method.");
 	}
-	else
-		// Throw error if reader not initialized
-		throw ReaderClosed("No Reader has been initialized for this Clip.  Call Reader(*reader) before calling this method.");
+
+	// Check for open reader (or throw exception)
+	if (!is_open) {
+		throw ReaderClosed(
+			"The Clip is closed.  Call Open() before calling this method.");
+	}
+
+	// Adjust out of bounds frame number
+	frame_number = adjust_frame_number_minimum(frame_number);
+
+	// Get the original frame and pass it to GetFrame overload
+	std::shared_ptr<Frame> original_frame = GetOrCreateFrame(frame_number);
+	return GetFrame(original_frame, frame_number);
 }
 
 // Use an existing openshot::Frame object and draw this Clip's frame onto it
 std::shared_ptr<Frame> Clip::GetFrame(std::shared_ptr<openshot::Frame> frame, int64_t frame_number)
 {
-	// Check for open reader (or throw exception)
-	if (!is_open)
-		throw ReaderClosed("The Clip is closed.  Call Open() before calling this method.");
-
-	if (reader)
-	{
-		// Adjust out of bounds frame number
-		frame_number = adjust_frame_number_minimum(frame_number);
-
-		// Check the cache for this frame
-		std::shared_ptr<Frame> cached_frame = cache.GetFrame(frame_number);
-		if (cached_frame) {
-			// Debug output
-			ZmqLogger::Instance()->AppendDebugMethod("Clip::GetFrame", "returned cached frame", frame_number);
-
-			// Return the cached frame
-			return cached_frame;
-		}
-
-		// Adjust has_video and has_audio overrides
-		int enabled_audio = has_audio.GetInt(frame_number);
-		if (enabled_audio == -1 && reader && reader->info.has_audio)
-			enabled_audio = 1;
-		else if (enabled_audio == -1 && reader && !reader->info.has_audio)
-			enabled_audio = 0;
-		int enabled_video = has_video.GetInt(frame_number);
-		if (enabled_video == -1 && reader && reader->info.has_video)
-			enabled_video = 1;
-		else if (enabled_video == -1 && reader && !reader->info.has_audio)
-			enabled_video = 0;
-
-		// Is a time map detected
-		int64_t new_frame_number = frame_number;
-		int64_t time_mapped_number = adjust_frame_number_minimum(time.GetLong(frame_number));
-		if (time.GetLength() > 1)
-			new_frame_number = time_mapped_number;
-
-		// Now that we have re-mapped what frame number is needed, go and get the frame pointer
-		std::shared_ptr<Frame> original_frame;
-		original_frame = GetOrCreateFrame(new_frame_number);
-
-		// Copy the image from the odd field
-		if (enabled_video)
-			frame->AddImage(std::make_shared<QImage>(*original_frame->GetImage()));
-
-		// Loop through each channel, add audio
-		if (enabled_audio && reader->info.has_audio)
-			for (int channel = 0; channel < original_frame->GetAudioChannelsCount(); channel++)
-				frame->AddAudio(true, channel, 0, original_frame->GetAudioSamples(channel), original_frame->GetAudioSamplesCount(), 1.0);
-
-		// Get time mapped frame number (used to increase speed, change direction, etc...)
-		// TODO: Handle variable # of samples, since this resamples audio for different speeds (only when time curve is set)
-		get_time_mapped_frame(frame, new_frame_number);
-
-		// Adjust # of samples to match requested (the interaction with time curves will make this tricky)
-		// TODO: Implement move samples to/from next frame
-
-		// Apply effects to the frame (if any)
-		apply_effects(frame);
-
-		// Determine size of image (from Timeline or Reader)
-		int width = 0;
-		int height = 0;
-		if (timeline) {
-			// Use timeline size (if available)
-			width = timeline->preview_width;
-			height = timeline->preview_height;
-		} else {
-			// Fallback to clip size
-			width = reader->info.width;
-			height = reader->info.height;
-		}
-
-		// Apply keyframe / transforms
-		apply_keyframes(frame, width, height);
-
-		// Cache frame
-		cache.Add(frame);
-
-		// Return processed 'frame'
-		return frame;
+	if (!reader) {
+		throw ReaderClosed(
+			"No Reader has been initialized for this Clip. "
+			"Call Reader(*reader) before calling this method.");
 	}
-	else
-		// Throw error if reader not initialized
-		throw ReaderClosed("No Reader has been initialized for this Clip.  Call Reader(*reader) before calling this method.");
+
+	// Check for open reader (or throw exception)
+	if (!is_open) {
+		throw ReaderClosed("The Clip is closed. Call Open() before calling this method.");
+	}
+
+	// Adjust out of bounds frame number
+	frame_number = adjust_frame_number_minimum(frame_number);
+
+	// Check the cache for this frame
+	std::shared_ptr<Frame> cached_frame = cache.GetFrame(frame_number);
+	if (cached_frame) {
+		// Debug output
+		ZmqLogger::Instance()->AppendDebugMethod(
+			"Clip::GetFrame", "returned cached frame", frame_number);
+
+		// Return the cached frame
+		return cached_frame;
+	}
+
+	// Adjust has_video and has_audio overrides
+	int enabled_audio = has_audio.GetInt(frame_number);
+	if (enabled_audio == -1 && reader && reader->info.has_audio)
+		enabled_audio = 1;
+	else if (enabled_audio == -1 && reader && !reader->info.has_audio)
+		enabled_audio = 0;
+	int enabled_video = has_video.GetInt(frame_number);
+	if (enabled_video == -1 && reader && reader->info.has_video)
+		enabled_video = 1;
+	else if (enabled_video == -1 && reader && !reader->info.has_audio)
+		enabled_video = 0;
+
+	// Is a time map detected
+	int64_t new_frame_number = frame_number;
+	int64_t time_mapped_number = adjust_frame_number_minimum(time.GetLong(frame_number));
+	if (time.GetLength() > 1)
+		new_frame_number = time_mapped_number;
+
+	// Now that we have re-mapped what frame number is needed, go and get the frame pointer
+	std::shared_ptr<Frame> original_frame;
+	original_frame = GetOrCreateFrame(new_frame_number);
+
+	// Copy the image from the odd field
+	if (enabled_video) {
+		frame->AddImage(
+			std::make_shared<QImage>(*original_frame->GetImage()));
+	}
+
+	// Loop through each channel, add audio
+	if (enabled_audio && reader->info.has_audio) {
+		for (int channel = 0; channel < original_frame->GetAudioChannelsCount(); channel++) {
+			frame->AddAudio(
+				true, channel, 0,
+				original_frame->GetAudioSamples(channel),
+				original_frame->GetAudioSamplesCount(), 1.0);
+		}
+	}
+
+	// Get time mapped frame number (used to increase speed, change direction, etc...)
+	// TODO: Handle variable # of samples, since this resamples audio for different speeds (only when time curve is set)
+	get_time_mapped_frame(frame, new_frame_number);
+
+	// Adjust # of samples to match requested (the interaction with time curves will make this tricky)
+	// TODO: Implement move samples to/from next frame
+
+	// Apply effects to the frame (if any)
+	apply_effects(frame);
+
+	// Determine size of image (from Timeline or Reader)
+	int width = 0;
+	int height = 0;
+	if (timeline) {
+		// Use timeline size (if available)
+		width = timeline->preview_width;
+		height = timeline->preview_height;
+	} else {
+		// Fallback to clip size
+		width = reader->info.width;
+		height = reader->info.height;
+	}
+
+	// Apply keyframe / transforms
+	apply_keyframes(frame, width, height);
+
+	// Cache frame
+	cache.Add(frame);
+
+	// Return processed 'frame'
+	return frame;
 }
 
 // Look up an effect by ID
@@ -462,7 +469,7 @@ void Clip::reverse_buffer(juce::AudioSampleBuffer* buffer)
 	int channels = buffer->getNumChannels();
 
 	// Reverse array (create new buffer to hold the reversed version)
-	juce::AudioSampleBuffer *reversed = new juce::AudioSampleBuffer(channels, number_of_samples);
+	auto *reversed = new juce::AudioSampleBuffer(channels, number_of_samples);
 	reversed->clear();
 
 	for (int channel = 0; channel < channels; channel++)
@@ -487,201 +494,235 @@ void Clip::reverse_buffer(juce::AudioSampleBuffer* buffer)
 void Clip::get_time_mapped_frame(std::shared_ptr<Frame> frame, int64_t frame_number)
 {
 	// Check for valid reader
-	if (!reader)
+	if (!reader) {
 		// Throw error if reader not initialized
-		throw ReaderClosed("No Reader has been initialized for this Clip.  Call Reader(*reader) before calling this method.");
+		throw ReaderClosed(
+			"No Reader has been initialized for this Clip. "
+			"Call Reader(*reader) before calling this method.");
+	}
 
 	// Check for a valid time map curve
-	if (time.GetLength() > 1)
-	{
-		const GenericScopedLock<juce::CriticalSection> lock(getFrameCriticalSection);
+	if (time.GetLength() <= 1)
+		return;
 
-		// create buffer and resampler
-		juce::AudioSampleBuffer *samples = NULL;
-		if (!resampler)
-			resampler = new AudioResampler();
+	const GenericScopedLock<juce::CriticalSection> lock(getFrameCriticalSection);
 
-		// Get new frame number
-		int new_frame_number = frame->number;
+	// create buffer and resampler
+	juce::AudioSampleBuffer *samples = NULL;
+	if (!resampler)
+		resampler = new AudioResampler();
 
-		// Get delta (difference in previous Y value)
-		int delta = int(round(time.GetDelta(frame_number)));
+	// Get new frame number
+	int new_frame_number = frame->number;
 
-		// Init audio vars
-		int channels = reader->info.channels;
-		int number_of_samples = GetOrCreateFrame(new_frame_number)->GetAudioSamplesCount();
+	// Get delta (difference in previous Y value)
+	int delta = int(round(time.GetDelta(frame_number)));
 
-		// Only resample audio if needed
-		if (reader->info.has_audio) {
-			// Determine if we are speeding up or slowing down
-			if (time.GetRepeatFraction(frame_number).den > 1) {
-				// SLOWING DOWN AUDIO
-				// Resample data, and return new buffer pointer
-				juce::AudioSampleBuffer *resampled_buffer = NULL;
+	// Init audio vars
+	int channels = reader->info.channels;
+	int number_of_samples = GetOrCreateFrame(new_frame_number)->GetAudioSamplesCount();
 
-				// SLOW DOWN audio (split audio)
-				samples = new juce::AudioSampleBuffer(channels, number_of_samples);
-				samples->clear();
+	// Only resample audio if needed
+	if (!reader->info.has_audio)
+		return;
 
-				// Loop through channels, and get audio samples
-				for (int channel = 0; channel < channels; channel++)
-					// Get the audio samples for this channel
-					samples->addFrom(channel, 0, GetOrCreateFrame(new_frame_number)->GetAudioSamples(channel),
-									 number_of_samples, 1.0f);
+	// Determine if we are speeding up or slowing down
+	if (time.GetRepeatFraction(frame_number).den > 1) {
+		// SLOWING DOWN AUDIO
+		// Resample data, and return new buffer pointer
+		juce::AudioSampleBuffer *resampled_buffer = NULL;
+
+		// SLOW DOWN audio (split audio)
+		samples = new juce::AudioSampleBuffer(channels, number_of_samples);
+		samples->clear();
+
+		// Loop through channels, and get audio samples
+		for (int channel = 0; channel < channels; channel++) {
+			// Get the audio samples for this channel
+			samples->addFrom(
+				channel, 0,
+				GetOrCreateFrame(new_frame_number)->GetAudioSamples(channel),
+				number_of_samples, 1.0f);
+		}
+
+		// Reverse the samples (if needed)
+		if (!time.IsIncreasing(frame_number))
+			reverse_buffer(samples);
+
+		// Resample audio to be X times slower (where X is the denominator of the repeat fraction)
+		resampler->SetBuffer(samples, 1.0 / time.GetRepeatFraction(frame_number).den);
+
+		// Resample the data (since it's the 1st slice)
+		resampled_buffer = resampler->GetResampledBuffer();
+
+		// Just take the samples we need for the requested frame
+		int start = (number_of_samples * (time.GetRepeatFraction(frame_number).num - 1));
+		if (start > 0)
+			start -= 1;
+		for (int channel = 0; channel < channels; channel++) {
+			// Add new (slower) samples, to the frame object
+			frame->AddAudio(
+				true, channel, 0,
+				resampled_buffer->getReadPointer(channel, start),
+				number_of_samples, 1.0f);
+		}
+
+		// Clean up
+		resampled_buffer = NULL;
+	}
+	else if (abs(delta) > 1 && abs(delta) < 100) {
+		int start = 0;
+		if (delta > 0) {
+			// SPEED UP (multiple frames of audio), as long as it's not more than X frames
+			int total_delta_samples = 0;
+			for (int delta_frame = new_frame_number - (delta - 1);
+				 delta_frame <= new_frame_number; delta_frame++) {
+				total_delta_samples += Frame::GetSamplesPerFrame(
+					delta_frame, reader->info.fps,
+					reader->info.sample_rate,
+					reader->info.channels);
+			}
+
+			// Allocate a new sample buffer for these delta frames
+			samples = new juce::AudioSampleBuffer(channels, total_delta_samples);
+			samples->clear();
+
+			// Loop through each frame in this delta
+			for (int delta_frame = new_frame_number - (delta - 1);
+				 delta_frame <= new_frame_number; delta_frame++) {
+				// buffer to hold detal samples
+				int number_of_delta_samples = GetOrCreateFrame(delta_frame)->GetAudioSamplesCount();
+				auto *delta_samples = new juce::AudioSampleBuffer(
+					channels, number_of_delta_samples);
+				delta_samples->clear();
+
+				for (int channel = 0; channel < channels; channel++) {
+					delta_samples->addFrom(
+						channel, 0,
+						GetOrCreateFrame(delta_frame)->GetAudioSamples(channel),
+						number_of_delta_samples, 1.0f);
+				}
 
 				// Reverse the samples (if needed)
 				if (!time.IsIncreasing(frame_number))
-					reverse_buffer(samples);
+					reverse_buffer(delta_samples);
 
-				// Resample audio to be X times slower (where X is the denominator of the repeat fraction)
-				resampler->SetBuffer(samples, 1.0 / time.GetRepeatFraction(frame_number).den);
-
-				// Resample the data (since it's the 1st slice)
-				resampled_buffer = resampler->GetResampledBuffer();
-
-				// Just take the samples we need for the requested frame
-				int start = (number_of_samples * (time.GetRepeatFraction(frame_number).num - 1));
-				if (start > 0)
-					start -= 1;
-				for (int channel = 0; channel < channels; channel++)
-					// Add new (slower) samples, to the frame object
-					frame->AddAudio(true, channel, 0, resampled_buffer->getReadPointer(channel, start),
-										number_of_samples, 1.0f);
-
-				// Clean up
-				resampled_buffer = NULL;
-
-			}
-			else if (abs(delta) > 1 && abs(delta) < 100) {
-				int start = 0;
-				if (delta > 0) {
-					// SPEED UP (multiple frames of audio), as long as it's not more than X frames
-					int total_delta_samples = 0;
-					for (int delta_frame = new_frame_number - (delta - 1);
-						 delta_frame <= new_frame_number; delta_frame++)
-						total_delta_samples += Frame::GetSamplesPerFrame(delta_frame, reader->info.fps,
-																		 reader->info.sample_rate,
-																		 reader->info.channels);
-
-					// Allocate a new sample buffer for these delta frames
-					samples = new juce::AudioSampleBuffer(channels, total_delta_samples);
-					samples->clear();
-
-					// Loop through each frame in this delta
-					for (int delta_frame = new_frame_number - (delta - 1);
-						 delta_frame <= new_frame_number; delta_frame++) {
-						// buffer to hold detal samples
-						int number_of_delta_samples = GetOrCreateFrame(delta_frame)->GetAudioSamplesCount();
-						juce::AudioSampleBuffer *delta_samples = new juce::AudioSampleBuffer(channels,
-																					   number_of_delta_samples);
-						delta_samples->clear();
-
-						for (int channel = 0; channel < channels; channel++)
-							delta_samples->addFrom(channel, 0, GetOrCreateFrame(delta_frame)->GetAudioSamples(channel),
-												   number_of_delta_samples, 1.0f);
-
-						// Reverse the samples (if needed)
-						if (!time.IsIncreasing(frame_number))
-							reverse_buffer(delta_samples);
-
-						// Copy the samples to
-						for (int channel = 0; channel < channels; channel++)
-							// Get the audio samples for this channel
-							samples->addFrom(channel, start, delta_samples->getReadPointer(channel),
-											 number_of_delta_samples, 1.0f);
-
-						// Clean up
-						delete delta_samples;
-						delta_samples = NULL;
-
-						// Increment start position
-						start += number_of_delta_samples;
-					}
-				}
-				else {
-					// SPEED UP (multiple frames of audio), as long as it's not more than X frames
-					int total_delta_samples = 0;
-					for (int delta_frame = new_frame_number - (delta + 1);
-						 delta_frame >= new_frame_number; delta_frame--)
-						total_delta_samples += Frame::GetSamplesPerFrame(delta_frame, reader->info.fps,
-																		 reader->info.sample_rate,
-																		 reader->info.channels);
-
-					// Allocate a new sample buffer for these delta frames
-					samples = new juce::AudioSampleBuffer(channels, total_delta_samples);
-					samples->clear();
-
-					// Loop through each frame in this delta
-					for (int delta_frame = new_frame_number - (delta + 1);
-						 delta_frame >= new_frame_number; delta_frame--) {
-						// buffer to hold delta samples
-						int number_of_delta_samples = GetOrCreateFrame(delta_frame)->GetAudioSamplesCount();
-						juce::AudioSampleBuffer *delta_samples = new juce::AudioSampleBuffer(channels,
-																					   number_of_delta_samples);
-						delta_samples->clear();
-
-						for (int channel = 0; channel < channels; channel++)
-							delta_samples->addFrom(channel, 0, GetOrCreateFrame(delta_frame)->GetAudioSamples(channel),
-												   number_of_delta_samples, 1.0f);
-
-						// Reverse the samples (if needed)
-						if (!time.IsIncreasing(frame_number))
-							reverse_buffer(delta_samples);
-
-						// Copy the samples to
-						for (int channel = 0; channel < channels; channel++)
-							// Get the audio samples for this channel
-							samples->addFrom(channel, start, delta_samples->getReadPointer(channel),
-											 number_of_delta_samples, 1.0f);
-
-						// Clean up
-						delete delta_samples;
-						delta_samples = NULL;
-
-						// Increment start position
-						start += number_of_delta_samples;
-					}
-				}
-
-				// Resample audio to be X times faster (where X is the delta of the repeat fraction)
-				resampler->SetBuffer(samples, float(start) / float(number_of_samples));
-
-				// Resample data, and return new buffer pointer
-				juce::AudioSampleBuffer *buffer = resampler->GetResampledBuffer();
-
-				// Add the newly resized audio samples to the current frame
-				for (int channel = 0; channel < channels; channel++)
-					// Add new (slower) samples, to the frame object
-					frame->AddAudio(true, channel, 0, buffer->getReadPointer(channel), number_of_samples, 1.0f);
-
-				// Clean up
-				buffer = NULL;
-			}
-			else {
-				// Use the samples on this frame (but maybe reverse them if needed)
-				samples = new juce::AudioSampleBuffer(channels, number_of_samples);
-				samples->clear();
-
-				// Loop through channels, and get audio samples
-				for (int channel = 0; channel < channels; channel++)
+				// Copy the samples to
+				for (int channel = 0; channel < channels; channel++) {
 					// Get the audio samples for this channel
-					samples->addFrom(channel, 0, frame->GetAudioSamples(channel), number_of_samples, 1.0f);
+					samples->addFrom(
+						channel, start,
+						delta_samples->getReadPointer(channel),
+						number_of_delta_samples, 1.0f);
+				}
 
-				// reverse the samples
-				if (!time.IsIncreasing(frame_number))
-					reverse_buffer(samples);
+				// Clean up
+				delete delta_samples;
+				delta_samples = NULL;
 
-				// Add reversed samples to the frame object
-				for (int channel = 0; channel < channels; channel++)
-					frame->AddAudio(true, channel, 0, samples->getReadPointer(channel), number_of_samples, 1.0f);
-
-
+				// Increment start position
+				start += number_of_delta_samples;
+			}
+		}
+		else {
+			// SPEED UP (multiple frames of audio), as long as it's not more than X frames
+			int total_delta_samples = 0;
+			for (int delta_frame = new_frame_number - (delta + 1);
+				 delta_frame >= new_frame_number; delta_frame--) {
+				total_delta_samples += Frame::GetSamplesPerFrame(
+					delta_frame, reader->info.fps,
+					reader->info.sample_rate,
+					reader->info.channels);
 			}
 
-			delete samples;
-			samples = NULL;
+			// Allocate a new sample buffer for these delta frames
+			samples = new juce::AudioSampleBuffer(channels, total_delta_samples);
+			samples->clear();
+
+			// Loop through each frame in this delta
+			for (int delta_frame = new_frame_number - (delta + 1);
+				 delta_frame >= new_frame_number; delta_frame--) {
+				// buffer to hold delta samples
+				int number_of_delta_samples = GetOrCreateFrame(delta_frame)->GetAudioSamplesCount();
+				auto *delta_samples = new juce::AudioSampleBuffer(
+					channels, number_of_delta_samples);
+				delta_samples->clear();
+
+				for (int channel = 0; channel < channels; channel++) {
+					delta_samples->addFrom(
+						channel, 0,
+						GetOrCreateFrame(delta_frame)->GetAudioSamples(channel),
+						number_of_delta_samples, 1.0f);
+				}
+
+				// Reverse the samples (if needed)
+				if (!time.IsIncreasing(frame_number))
+					reverse_buffer(delta_samples);
+
+				// Copy the samples to
+				for (int channel = 0; channel < channels; channel++) {
+					// Get the audio samples for this channel
+					samples->addFrom(
+						channel, start,
+						delta_samples->getReadPointer(channel),
+						number_of_delta_samples, 1.0f);
+				}
+
+				// Clean up
+				delete delta_samples;
+				delta_samples = NULL;
+
+				// Increment start position
+				start += number_of_delta_samples;
+			}
+		}
+
+		// Resample audio to be X times faster (where X is the delta of the repeat fraction)
+		resampler->SetBuffer(samples, float(start) / float(number_of_samples));
+
+		// Resample data, and return new buffer pointer
+		juce::AudioSampleBuffer *buffer = resampler->GetResampledBuffer();
+
+		// Add the newly resized audio samples to the current frame
+		for (int channel = 0; channel < channels; channel++) {
+			// Add new (slower) samples, to the frame object
+			frame->AddAudio(
+				true, channel, 0,
+				buffer->getReadPointer(channel),
+				number_of_samples, 1.0f);
+		}
+
+		// Clean up
+		buffer = NULL;
+	}
+	else {
+		// Use the samples on this frame (but maybe reverse them if needed)
+		samples = new juce::AudioSampleBuffer(channels, number_of_samples);
+		samples->clear();
+
+		// Loop through channels, and get audio samples
+		for (int channel = 0; channel < channels; channel++) {
+			// Get the audio samples for this channel
+			samples->addFrom(
+				channel, 0,
+				frame->GetAudioSamples(channel),
+				number_of_samples, 1.0f);
+		}
+
+		// reverse the samples
+		if (!time.IsIncreasing(frame_number))
+			reverse_buffer(samples);
+
+		// Add reversed samples to the frame object
+		for (int channel = 0; channel < channels; channel++) {
+			frame->AddAudio(
+				true, channel, 0,
+				samples->getReadPointer(channel), number_of_samples, 1.0f);
 		}
 	}
+
+	delete samples;
+	samples = NULL;
 }
 
 // Adjust frame number minimum value
@@ -690,9 +731,7 @@ int64_t Clip::adjust_frame_number_minimum(int64_t frame_number)
 	// Never return a frame number 0 or below
 	if (frame_number < 1)
 		return 1;
-	else
-		return frame_number;
-
+	return frame_number;
 }
 
 // Get or generate a blank frame
@@ -700,7 +739,8 @@ std::shared_ptr<Frame> Clip::GetOrCreateFrame(int64_t number)
 {
 	try {
 		// Debug output
-		ZmqLogger::Instance()->AppendDebugMethod("Clip::GetOrCreateFrame (from reader)", "number", number);
+		ZmqLogger::Instance()->AppendDebugMethod(
+			"Clip::GetOrCreateFrame (from reader)", "number", number);
 
 		// Attempt to get a frame (but this could fail if a reader has just been closed)
 		auto reader_frame = reader->GetFrame(number);
@@ -726,10 +766,14 @@ std::shared_ptr<Frame> Clip::GetOrCreateFrame(int64_t number)
 	}
 
 	// Estimate # of samples needed for this frame
-	int estimated_samples_in_frame = Frame::GetSamplesPerFrame(number, reader->info.fps, reader->info.sample_rate, reader->info.channels);
+	int estimated_samples_in_frame = Frame::GetSamplesPerFrame(
+		number, reader->info.fps, reader->info.sample_rate, reader->info.channels);
 
 	// Debug output
-	ZmqLogger::Instance()->AppendDebugMethod("Clip::GetOrCreateFrame (create blank)", "number", number, "estimated_samples_in_frame", estimated_samples_in_frame);
+	ZmqLogger::Instance()->AppendDebugMethod(
+		"Clip::GetOrCreateFrame (create blank)",
+		"number", number,
+		"estimated_samples_in_frame", estimated_samples_in_frame);
 
 	// Create blank frame
 	auto new_frame = std::make_shared<Frame>(
@@ -1140,7 +1184,10 @@ void Clip::apply_keyframes(std::shared_ptr<Frame> frame, int width, int height)
 	if (Waveform())
 	{
 		// Debug output
-		ZmqLogger::Instance()->AppendDebugMethod("Clip::apply_keyframes (Generate Waveform Image)", "frame->number", frame->number, "Waveform()", Waveform());
+		ZmqLogger::Instance()->AppendDebugMethod(
+			"Clip::apply_keyframes (Generate Waveform Image)",
+			"frame->number", frame->number,
+			"Waveform()", Waveform());
 
 		// Get the color of the waveform
 		int red = wave_color.red.GetInt(frame->number);
