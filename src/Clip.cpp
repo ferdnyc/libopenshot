@@ -381,7 +381,7 @@ std::shared_ptr<Frame> Clip::GetFrame(std::shared_ptr<openshot::Frame> frame, in
 	int enabled_video = has_video.GetInt(frame_number);
 	if (enabled_video == -1 && reader && reader->info.has_video)
 		enabled_video = 1;
-	else if (enabled_video == -1 && reader && !reader->info.has_audio)
+	else if (enabled_video == -1 && reader && !reader->info.has_video)
 		enabled_video = 0;
 
 	// Is a time map detected
