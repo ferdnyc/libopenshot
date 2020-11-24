@@ -33,28 +33,31 @@
 #define DONT_SET_USING_JUCE_NAMESPACE 1
 #include "OpenShot.h"
 
-using namespace std;
-using namespace openshot;
+SUITE(ReaderBase)
+{
 
 // Since it is not possible to instantiate an abstract class, this test creates
 // a new derived class, in order to test the base class file info struct.
-TEST(ReaderBase_Derived_Class)
+TEST(Derived_Class)
 {
 	// Create a new derived class from type ReaderBase
-	class TestReader : public ReaderBase
+	class TestReader : public openshot::ReaderBase
 	{
 	public:
 		TestReader() { };
-		CacheBase* GetCache() { return NULL; };
-		std::shared_ptr<Frame> GetFrame(int64_t number) { std::shared_ptr<Frame> f(new Frame()); return f; }
+		openshot::CacheBase* GetCache() { return NULL; };
+		std::shared_ptr<openshot::Frame> GetFrame(int64_t number) {
+			 auto f = std::make_shared<openshot::Frame>();
+			 return f;
+		}
 		void Close() { };
 		void Open() { };
-		string Json() const { return ""; };
-		void SetJson(string value) { };
+		std::string Json() const { return ""; };
+		void SetJson(std::string value) { };
 		Json::Value JsonValue() const { return Json::Value("{}"); };
 		void SetJsonValue(Json::Value root) { };
 		bool IsOpen() { return true; };
-		string Name() { return "TestReader"; };
+		std::string Name() { return "TestReader"; };
 	};
 
 	// Create an instance of the derived class
@@ -86,3 +89,5 @@ TEST(ReaderBase_Derived_Class)
 	CHECK_EQUAL(1, t1.info.fps.num);
 	CHECK_EQUAL(1, t1.info.fps.den);
 }
+
+}  // SUITE
