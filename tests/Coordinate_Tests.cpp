@@ -33,23 +33,25 @@
 #define DONT_SET_USING_JUCE_NAMESPACE 1
 #include "OpenShot.h"
 
-using namespace std;
-using namespace openshot;
+SUITE(Coordinate)
+{
 
-TEST(Coordinate_Default_Constructor)
+TEST(Default_Constructor)
 {
 	// Create an empty coordinate
-	Coordinate c1;
+	openshot::Coordinate c1;
 
 	CHECK_CLOSE(0.0f, c1.X, 0.00001);
 	CHECK_CLOSE(0.0f, c1.Y, 0.00001);
 }
 
-TEST(Coordinate_X_Y_Constructor)
+TEST(X_Y_Constructor)
 {
 	// Create an empty coordinate
-	Coordinate c1(2,8);
+	openshot::Coordinate c1(2,8);
 
 	CHECK_CLOSE(2.0f, c1.X, 0.00001);
 	CHECK_CLOSE(8.0f, c1.Y, 0.00001);
 }
+
+}  // SUITE
