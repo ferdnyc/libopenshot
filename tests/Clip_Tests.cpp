@@ -280,4 +280,58 @@ TEST(Exceptions_and_Errors)
 
 }
 
+
+TEST(Metadata_and_Json)
+{
+    std::stringstream path;
+	path << TEST_MEDIA_PATH << "piano.wav";
+
+    openshot::Clip c1;
+    openshot::FFmpegReader r1(path.str());
+    c1.Reader(&r1);
+    c1.Open();
+    CHECK_EQUAL("Clip", c1.Name());
+
+    openshot::Clip c2(static_cast<openshot::ReaderBase*>(&r1));
+    c2.Open();
+    CHECK_EQUAL(c2.Reader(), c1.Reader());
+
+	auto json1 = c1.Json();
+	auto json2 = c2.JsonValue();
+	auto json_string2 = json2.toStyledString();
+
+	CHECK_EQUAL(json1, json_string2);
+}
+
+TEST(SetJson)
+{
+	openshot::Clip c1;
+	std::stringstream json_stream;
+	json_stream << R"json(
+		{
+			"waveform": 1,
+			"start": 1.0,
+            "end": 5.0,
+			"gravity": )json";
+    json_stream << static_cast<float>(
+        openshot::GravityType::GRAVITY_TOP_LEFT) << ",";
+    json_stream << R"json(
+            "layer": 30000
+        }
+            )json";
+	c1.SetJson(json_stream.str());
+
+    // Check that our values were properly set
+	CHECK_EQUAL(true, c1.Waveform());
+	CHECK_EQUAL(openshot::GravityType::GRAVITY_TOP_LEFT, c1.gravity);
+	CHECK_EQUAL(1.0, c1.Start());
+	CHECK_EQUAL(5.0, c1.End());
+}
+
+TEST(PropertiesJson)
+{
+    openshot::Clip c1;
+    auto prop_json = c1.PropertiesJSON(1);
+}
+
 }; // SUITE
