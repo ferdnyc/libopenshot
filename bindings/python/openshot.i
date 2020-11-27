@@ -147,7 +147,7 @@
 	}
 	std::string __repr__() {
 		std::ostringstream result;
-		result << $self->num << ":" << $self->den;
+		result << $self;
 		return result.str();
   }
 }
