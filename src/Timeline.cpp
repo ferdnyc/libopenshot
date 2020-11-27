@@ -29,6 +29,13 @@
  */
 
 #include "Timeline.h"
+#include "ZmqLogger.h"
+
+#include <QPainter>
+#include <QRegularExpression>
+#include <QDir>
+#include <QFileInfo>
+#include <QString>
 
 using namespace openshot;
 
@@ -700,7 +707,7 @@ std::shared_ptr<Frame> Timeline::GetFrame(int64_t requested_frame)
 	frame = final_cache->GetFrame(requested_frame);
 	if (frame) {
 		// Debug output
-		ZmqLogger::Instance()->AppendDebugMethod("Timeline::GetFrame (Cached frame found)", "requested_frame", requested_frame);
+		zmqLog() << "Timeline::GetFrame (Cached frame found) " << LOGVAR(requested_frame);
 
 		// Return cached frame
 		return frame;

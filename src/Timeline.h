@@ -35,9 +35,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
-#include <QtGui/QImage>
-#include <QtGui/QPainter>
-#include <QtCore/QRegularExpression>
+#include <QImage>
 #include "CacheBase.h"
 #include "CacheDisk.h"
 #include "CacheMemory.h"
