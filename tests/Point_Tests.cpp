@@ -170,4 +170,27 @@ TEST(SetJson)
 	CHECK_EQUAL(openshot::InterpolationType::CONSTANT, p1.interpolation);
 }
 
+
+TEST(Operator_ostream)
+{
+	std::stringstream output1;
+	openshot::Coordinate c1(10, 5);
+	openshot::Point p1(c1, openshot::InterpolationType::LINEAR);
+	output1 << p1;
+	CHECK_EQUAL("co(10, 5) interpolation(LINEAR)", output1.str());
+
+	std::stringstream output2;
+	openshot::Point p2(c1, openshot::InterpolationType::CONSTANT);
+	output2 << p2;
+	CHECK_EQUAL("co(10, 5) interpolation(CONSTANT)", output2.str());
+
+	std::stringstream output3;
+	openshot::Point p3(c1, openshot::InterpolationType::BEZIER);
+	output3 << p3;
+	CHECK_EQUAL(
+		"co(10, 5) interpolation(BEZIER) handle_left(0.5, 1) handle_right(0.5, 0)",
+		output3.str()
+	);
+}
+
 }  // SUITE

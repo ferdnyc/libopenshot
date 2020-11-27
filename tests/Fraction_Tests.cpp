@@ -36,7 +36,9 @@
 using namespace std;
 using namespace openshot;
 
-TEST(Fraction_Default_Constructor)
+SUITE(Fraction) {
+
+TEST(Default_Constructor)
 {
 	// Create a default fraction (should be 1/1)
 	Fraction f1;
@@ -57,7 +59,7 @@ TEST(Fraction_Default_Constructor)
 	CHECK_CLOSE(1.0f, f1.ToDouble(), 0.00001);
 }
 
-TEST(Fraction_640_480)
+TEST(WxH_640_480)
 {
 	// Create fraction
 	Fraction f1(640, 480);
@@ -78,7 +80,7 @@ TEST(Fraction_640_480)
 	CHECK_CLOSE(1.33333f, f1.ToDouble(), 0.00001);
 }
 
-TEST(Fraction_1280_720)
+TEST(WxH_1280_720)
 {
 	// Create fraction
 	Fraction f1(1280, 720);
@@ -99,7 +101,7 @@ TEST(Fraction_1280_720)
 	CHECK_CLOSE(1.77777f, f1.ToDouble(), 0.00001);
 }
 
-TEST(Fraction_reciprocal)
+TEST(Reciprocal)
 {
 	// Create fraction
 	Fraction f1(1280, 720);
@@ -125,3 +127,14 @@ TEST(Fraction_reciprocal)
 	CHECK_CLOSE(1.77777f, f1.ToFloat(), 0.00001);
 	CHECK_CLOSE(1.77777f, f1.ToDouble(), 0.00001);
 }
+
+TEST(Operator_ostream)
+{
+	std::stringstream output;
+	openshot::Fraction f3(30000, 1001);
+
+	output << f3;
+	CHECK_EQUAL("Fraction(30000, 1001)", output.str());
+}
+
+};  // SUITE
