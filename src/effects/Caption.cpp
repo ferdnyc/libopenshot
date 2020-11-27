@@ -31,6 +31,8 @@
 #include "Caption.h"
 #include "../Clip.h"
 #include "../Timeline.h"
+#include <QPainter>
+#include <QRegularExpression>
 
 using namespace openshot;
 

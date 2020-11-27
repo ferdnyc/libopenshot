@@ -30,6 +30,7 @@
 
 #include "FrameMapper.h"
 #include "Clip.h"
+#include "ZmqLogger.h"
 
 using namespace std;
 using namespace openshot;
