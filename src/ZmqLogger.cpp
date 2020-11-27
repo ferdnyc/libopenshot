@@ -123,29 +123,27 @@ void ZmqLogger::Connection(const std::string& new_connection)
 void ZmqLogger::SendLog(const std::string& message)
 {
 	if (!enabled)
-		// Don't do anything
 		return;
 
 	// Execute this block in only one thread at a time
 	const std::lock_guard<std::recursive_mutex> lock(mutex);
 
-	// Send message over socket (ZeroMQ)
-	zmq::message_t reply (message.length());
-	std::memcpy (reply.data(), message.c_str(), message.length());
-
 #if ZMQ_VERSION > ZMQ_MAKE_VERSION(4, 3, 1)
-	// Set flags for immediate delivery (new API)
-	m_publisher->send(reply, zmq::send_flags::dontwait);
+	// Send with flags for immediate delivery (new API)
+	m_publisher->send(zmq::buffer(message), zmq::send_flags::dontwait);
 #else
-	m_publisher->send(reply);
+	// Construct message and send (clunky old API)
+	zmq::message_t zmq_msg(message.length());
+	std::memcpy(zmq_msg.data(), message.c_str(), message.length());
+	m_publisher->send(zmq_msg);
 #endif
 }
 
 // Log message to a file (if path set)
 void ZmqLogger::LogToFile(const std::string& message)
 {
-	// Write to log file (if opened, and force it to write to disk in case of a crash)
 	if (enabled && m_logFile.is_open())
+		// Write to log file (and flush in case of a crash)
 		m_logFile << message << std::endl;
 }
 
