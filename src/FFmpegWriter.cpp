@@ -32,6 +32,7 @@
  */
 
 #include "FFmpegWriter.h"
+#include "ZmqLogger.h"
 
 #include <iostream>
 
