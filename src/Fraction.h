@@ -32,6 +32,7 @@
 #define OPENSHOT_FRACTION_H
 
 #include <cmath>
+#include <iostream>
 
 namespace openshot {
 
@@ -71,7 +72,16 @@ namespace openshot {
 		Fraction Reciprocal();
 	};
 
-
+	// Stream output operator for openshot::Fraction
+	template<class charT, class traits>
+	std::basic_ostream<charT, traits>&
+	operator<<(std::basic_ostream<charT, traits>& o, const openshot::Fraction& frac) {
+    	std::basic_ostringstream<charT, traits> s;
+    	s.flags(o.flags());
+    	s.imbue(o.getloc());
+    	s.precision(o.precision());
+    	s << "Fraction(" << frac.num << ", " << frac.den << ")";
+    	return o << s.str();
+	};
 }
-
 #endif
