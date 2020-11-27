@@ -74,7 +74,9 @@ set(OPENSHOT_TEST_FILES
   KeyFrame_Tests.cpp
   Point_Tests.cpp
   Settings_Tests.cpp
-  Timeline_Tests.cpp )
+  StreamLog_Tests.cpp
+  Timeline_Tests.cpp
+  )
 
 ################ TESTER EXECUTABLE #################
 # Create unit test executable (openshot-test)
