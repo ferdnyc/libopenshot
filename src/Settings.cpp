@@ -29,7 +29,7 @@
  */
 
 #include "Settings.h"
-#include <cstdlib>
+#include <cstdlib>        // For std::getenv
 
 using namespace openshot;
 
@@ -53,7 +53,8 @@ Settings *Settings::Instance()
 		m_pInstance->HW_EN_DEVICE_SET = 0;
 		m_pInstance->PLAYBACK_AUDIO_DEVICE_NAME = "";
 		m_pInstance->DEBUG_TO_STDERR = false;
-		if (auto env_debug = std::getenv("LIBOPENSHOT_DEBUG"))
+		auto env_debug = std::getenv("LIBOPENSHOT_DEBUG");
+		if (env_debug != nullptr)
 			m_pInstance->DEBUG_TO_STDERR = true;
 	}
 
