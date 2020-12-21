@@ -171,14 +171,14 @@ target_link_libraries(openshot PUBLIC OpenShot::Audio)
 ###
 
 # Find the ImageMagick++ library
-find_package(ImageMagick COMPONENTS Magick++ MagickWand MagickCore)
+find_package(ImageMagick COMPONENTS Magick++ MagickCore)
 
 if(ImageMagick_FOUND)
   if(NOT TARGET ImageMagick::Magick++ AND NOT TARGET Magick++_TARGET)
-    add_library(Magick++_TARGET INTERFACE)
+    add_library(Magick++_PUBLIC INTERFACE)
 
     # Include ImageMagick++ headers (needed for compile)
-    set_property(TARGET Magick++_TARGET APPEND PROPERTY
+    set_property(TARGET Magick++_PUBLIC APPEND PROPERTY
       INTERFACE_INCLUDE_DIRECTORIES ${ImageMagick_INCLUDE_DIRS})
 
     # Set the Quantum Depth that ImageMagick was built with (default to 16 bits)
@@ -189,18 +189,19 @@ if(ImageMagick_FOUND)
       set(MAGICKCORE_HDRI_ENABLE 0)
     endif()
 
-    set_property(TARGET Magick++_TARGET APPEND PROPERTY
+    set_property(TARGET Magick++_PUBLIC APPEND PROPERTY
       INTERFACE_COMPILE_DEFINITIONS
         MAGICKCORE_QUANTUM_DEPTH=${MAGICKCORE_QUANTUM_DEPTH})
-    set_property(TARGET Magick++_TARGET APPEND PROPERTY
+    set_property(TARGET Magick++_PUBLIC APPEND PROPERTY
       INTERFACE_COMPILE_DEFINITIONS
         MAGICKCORE_HDRI_ENABLE=${MAGICKCORE_HDRI_ENABLE})
 
-    target_link_libraries(Magick++_TARGET INTERFACE
+    add_library(Magick++_PRIVATE INTERFACE)
+    target_link_libraries(Magick++_PRIVATE INTERFACE
       ${ImageMagick_LIBRARIES})
 
     # Alias to our namespaced name
-    add_library(ImageMagick::Magick++ ALIAS Magick++_TARGET)
+    add_library(ImageMagick::Magick++ ALIAS Magick++_PUBLIC)
 
   endif()
 
@@ -216,6 +217,7 @@ if(ImageMagick_FOUND)
 
   # Link with ImageMagick library
   target_link_libraries(openshot PUBLIC ImageMagick::Magick++)
+  target_link_libraries(openshot PRIVATE Magick++_PRIVATE)
 
   set(HAVE_IMAGEMAGICK TRUE CACHE BOOL "Building with ImageMagick support" FORCE)
   mark_as_advanced(HAVE_IMAGEMAGICK)
