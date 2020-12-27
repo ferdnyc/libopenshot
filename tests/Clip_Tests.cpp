@@ -28,6 +28,9 @@
  * along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sstream>
+#include <memory>
+
 #include "UnitTest++.h"
 
 // Work around older versions of UnitTest++ without REQUIRE
@@ -37,7 +40,11 @@
 
 // Prevent name clashes with juce::UnitTest
 #define DONT_SET_USING_JUCE_NAMESPACE 1
-#include "OpenShot.h"
+#include "Clip.h"
+#include "Frame.h"
+#include "Fraction.h"
+#include "Timeline.h"
+#include "Json.h"
 
 using namespace openshot;
 
@@ -334,4 +341,4 @@ TEST(PropertiesJson)
     auto prop_json = c1.PropertiesJSON(1);
 }
 
-}; // SUITE
+}  // SUITE
