@@ -34,6 +34,8 @@
 	#include "ImageReader.h"
 #endif
 #include "ReaderBase.h"
+#include "QtImageReader.h"
+#include "ChunkReader.h"
 
 using namespace openshot;
 

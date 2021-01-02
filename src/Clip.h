@@ -33,19 +33,24 @@
 
 #include <memory>
 #include <string>
-#include <QtGui/QImage>
-#include "AudioResampler.h"
+
+#include <QImage>
+
 #include "ClipBase.h"
 #include "Color.h"
 #include "Enums.h"
 #include "EffectBase.h"
-#include "Effects.h"
-#include "EffectInfo.h"
-#include "Fraction.h"
 #include "Frame.h"
 #include "KeyFrame.h"
 #include "ReaderBase.h"
+
 #include "JuceHeader.h"
+
+// Forward decls
+namespace openshot {
+	class AudioResampler;
+	class CacheMemory;
+}
 
 namespace openshot {
 
@@ -108,8 +113,8 @@ namespace openshot {
 		void init_reader_rotation();
 
 	private:
-		bool waveform; ///< Should a waveform be used instead of the clip's image
-		std::list<openshot::EffectBase*> effects; ///<List of clips on this timeline
+		bool waveform; ///< Whether an audio waveform should be used in place of clip's image
+		std::list<openshot::EffectBase*> effects; ///<List of effects on this clip
 		bool is_open;	///> Is Reader opened
 
 		// Audio resampler (if time mapping)
@@ -180,7 +185,6 @@ namespace openshot {
 		std::string Name() override { return "Clip"; };
 
 
-
 		/// @brief Add an effect to the clip
 		/// @param effect Add an effect to the clip. An effect can modify the audio or video of an openshot::Frame.
 		void AddEffect(openshot::EffectBase* effect);
@@ -188,7 +192,7 @@ namespace openshot {
 		/// Close the internal reader
 		void Close() override;
 
-		/// Return the list of effects on the timeline
+		/// Return the list of effects on the clip
 		std::list<openshot::EffectBase*> Effects() { return effects; };
 
 		/// Look up an effect by ID
@@ -233,12 +237,13 @@ namespace openshot {
 		Json::Value JsonValue() const override; ///< Generate Json::Value for this object
 		void SetJsonValue(const Json::Value root) override; ///< Load Json::Value into this object
 
-		/// Get all properties for a specific frame (perfect for a UI to display the current state
-		/// of all properties at any time)
+		/// @brief Get all properties for a specific frame
+		///
+		/// This is useful e.g. in a UI to display the current state of Clip properties
 		std::string PropertiesJSON(int64_t requested_frame) const override;
 
 		/// @brief Remove an effect from the clip
-		/// @param effect Remove an effect from the clip.
+		/// @param effect Pointer to the effect to remove
 		void RemoveEffect(openshot::EffectBase* effect);
 
 		/// Waveform property
@@ -261,7 +266,7 @@ namespace openshot {
 
 		// Time and Volume curves
 		openshot::Keyframe time; ///< Curve representing the frames over time to play (used for speed and direction of video)
-		openshot::Keyframe volume; ///< Curve representing the volume (0 to 1)
+		openshot::Keyframe volume; ///< Curve representing the audio volume (0 to 1)
 
 		/// Curve representing the color of the audio wave form
 		openshot::Color wave_color;

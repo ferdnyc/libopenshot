@@ -261,4 +261,84 @@ TEST(Verify_Parent_Timeline)
 	CHECK_EQUAL(c1.GetFrame(1)->GetImage()->height(), 480);
 }
 
-} // SUITE
+TEST(Exceptions_and_Errors)
+{
+    openshot::Clip c1;
+    openshot::ReaderBase* r1;
+    std::shared_ptr<openshot::Frame> f;
+
+    // Try to get a reader from an uninitialized clip
+    CHECK_THROW(r1 = c1.Reader(), openshot::ReaderClosed);
+
+    // Try to Close() a clip with no reader (why is this an error?)
+    CHECK_THROW(c1.Close(), openshot::ReaderClosed);
+
+    // Try to get a frame from a closed Clip
+    CHECK_THROW(f = c1.GetFrame(1), openshot::ReaderClosed);
+
+    // Try to get a frame from an open clip with no reader
+    std::stringstream path;
+	path << TEST_MEDIA_PATH << "sintel_trailer-720p.mp4";
+    openshot::FFmpegReader r2(path.str());
+    c1.Reader(&r2);
+    c1.Open();
+    c1.Reader(nullptr);
+    CHECK_THROW(c1.GetFrame(1), openshot::ReaderClosed);
+
+}
+
+
+TEST(Metadata_and_Json)
+{
+    std::stringstream path;
+	path << TEST_MEDIA_PATH << "piano.wav";
+
+    openshot::Clip c1;
+    openshot::FFmpegReader r1(path.str());
+    c1.Reader(&r1);
+    c1.Open();
+    CHECK_EQUAL("Clip", c1.Name());
+
+    openshot::Clip c2(static_cast<openshot::ReaderBase*>(&r1));
+    c2.Open();
+    CHECK_EQUAL(c2.Reader(), c1.Reader());
+
+	auto json1 = c1.Json();
+	auto json2 = c2.JsonValue();
+	auto json_string2 = json2.toStyledString();
+
+	CHECK_EQUAL(json1, json_string2);
+}
+
+TEST(SetJson)
+{
+	openshot::Clip c1;
+	std::stringstream json_stream;
+	json_stream << R"json(
+		{
+			"waveform": 1,
+			"start": 1.0,
+            "end": 5.0,
+			"gravity": )json";
+    json_stream << static_cast<float>(
+        openshot::GravityType::GRAVITY_TOP_LEFT) << ",";
+    json_stream << R"json(
+            "layer": 30000
+        }
+            )json";
+	c1.SetJson(json_stream.str());
+
+    // Check that our values were properly set
+	CHECK_EQUAL(true, c1.Waveform());
+	CHECK_EQUAL(openshot::GravityType::GRAVITY_TOP_LEFT, c1.gravity);
+	CHECK_EQUAL(1.0, c1.Start());
+	CHECK_EQUAL(5.0, c1.End());
+}
+
+TEST(PropertiesJson)
+{
+    openshot::Clip c1;
+    auto prop_json = c1.PropertiesJSON(1);
+}
+
+}  // SUITE
