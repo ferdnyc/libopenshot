@@ -1,4 +1,4 @@
-name: CI Build
+name: 'libopenshot-ci'
 on: [push, pull_request]
 jobs:
   build:
@@ -12,7 +12,7 @@ jobs:
     steps:
     - name: Check out source branch
       uses: actions/checkout@v2
-      
+
     - name: Download latest artifact from a github workflow
       uses: benday-inc/download-latest-artifact@v1.0.1
       with:
@@ -41,14 +41,14 @@ jobs:
         sudo apt install qtbase5-dev qtbase5-dev-tools
         sudo apt install libfdk-aac-dev libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libpostproc-dev libswresample-dev
         sudo apt install libzmq3-dev libmagick++-dev libunittest++-dev
-        
+
     - name: Install macOS dependencies
       if: ${{ runner.os == 'macOS' }}
       shell: bash
       run: |
         brew update
         brew install swig unittest-cpp doxygen
-        
+
     - name: Install Windows dependencies
       uses: msys2/setup-msys2@v2
       if: ${{ runner.os == 'Windows' }}
@@ -68,7 +68,7 @@ jobs:
         mkdir build
         pushd build
         cmake -B . -S .. -DCMAKE_INSTALL_PREFIX:PATH="dist" \
-              -DOpenShotAudio_ROOT=extern -DCMAKE_BUILD_TYPE="Debug" \
+              -DOpenShotAudio_ROOT=../extern -DCMAKE_BUILD_TYPE="Debug" \
               "${{ steps.coverage.outputs.value }}"
         cmake --build . -- VERBOSE=1
         popd
@@ -91,7 +91,7 @@ jobs:
       if: ${{ matrix.compiler == 'clang' }}
       with:
         file: build/coverage.info
-        
+
     - name: Upload build artifact
       uses: actions/upload-artifact@v2
       with:
