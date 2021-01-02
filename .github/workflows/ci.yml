@@ -19,7 +19,7 @@ jobs:
         token: ${{ secrets.CROSS_REPO_TOKEN }}
         repository_owner: 'ferdnyc'
         repository_name: 'libopenshot-audio'
-        workflow_name: 'CI build'
+        workflow_name: 'ci.yml'
         branch_name: 'develop'
         download_path: '${{ github.workspace }}/extern'
         download_filename: 'libopenshot-audio-${{ matrix.os }}'
