@@ -22,7 +22,7 @@ jobs:
         workflow_name: 'libopenshot-audio-ci'
         branch_name: 'develop'
         download_path: '${{ github.workspace }}/extern'
-        download_filename: 'libopenshot-audio-${{ matrix.os }}'
+        download_filename: 'libopenshot-audio-${{ matrix.os }}.zip'
 
     - name: Enable coverage scanning on Clang builds
       uses: haya14busa/action-cond@v1
@@ -65,6 +65,11 @@ jobs:
     - name: Build libopenshot
       shell: bash
       run: |
+        if [ -d extern ]; then
+          pushd extern
+          unzip "libopenshot-audio-${{ matrix.os }}.zip"
+          popd
+        fi
         mkdir build
         pushd build
         cmake -B . -S .. -DCMAKE_INSTALL_PREFIX:PATH="dist" \
