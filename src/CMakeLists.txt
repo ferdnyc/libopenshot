@@ -90,7 +90,6 @@ set(OPENSHOT_SOURCES
   ZmqLogger.cpp
   PlayerBase.cpp
   Point.cpp
-  Profiles.cpp
   QtHtmlReader.cpp
   QtImageReader.cpp
   QtPlayer.cpp
