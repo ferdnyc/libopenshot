@@ -48,7 +48,7 @@ jobs:
       shell: bash
       run: |
         brew update
-        brew install swig unittest-cpp doxygen
+        brew install swig unittest-cpp doxygen ffmpeg qt5 python3 zeromq
 
     - name: Install Windows dependencies
       uses: msys2/setup-msys2@v2
@@ -67,31 +67,26 @@ jobs:
       shell: bash
       run: |
         if [ -d extern ]; then
-          pushd extern
-          unzip "libopenshot-audio-${{ matrix.os }}.zip"
+          pushd ${{ github.workspace }}/extern
+          unzip "libopenshot-audio-${{ matrix.os }}.zip" -d OpenShotAudio
           popd
         fi
-        mkdir build
-        pushd build
-        cmake -B . -S .. -DCMAKE_INSTALL_PREFIX:PATH="dist" \
-              -DOpenShotAudio_ROOT=../extern -DCMAKE_BUILD_TYPE="Debug" \
-              "${{ steps.coverage.outputs.value }}"
+        cmake -B build -S . \
+          -DCMAKE_INSTALL_PREFIX:PATH="build/dist" \
+          -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/extern/OpenShotAudio" \
+          -DCMAKE_BUILD_TYPE="Debug" \
+          "${{ steps.coverage.outputs.value }}"
         cmake --build . -- VERBOSE=1
-        popd
 
     - name: Test libopenshot
       shell: bash
       run: |
-        pushd build
-        cmake --build . --target os_test -- VERBOSE=1
-        popd
+        cmake --build build --target os_test -- VERBOSE=1
 
     - name: Install libopenshot
       shell: bash
       run: |
-        pushd build
-        cmake --build . --target install -- VERBOSE=1
-        popd
+        cmake --build build --target install -- VERBOSE=1
 
     - uses: codecov/codecov-action@v1
       if: ${{ matrix.compiler == 'clang' }}
