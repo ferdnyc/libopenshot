@@ -6,95 +6,84 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04, macos-latest, windows-latest]
-        compiler: [gcc, clang]
+        os: [ubuntu-20.04, macos-latest, windows-latest]
+        compiler: [gcc]
     env:
       CC: ${{ matrix.compiler }}
     steps:
     - name: Check out source branch
       uses: actions/checkout@v2
 
-    - name: Download latest artifact from a github workflow
-      uses: benday-inc/download-latest-artifact@v1.0.1
+    - name: Download workflow artifact
+      uses: dawidd6/action-download-artifact@v2.11.0
       with:
-        token: ${{ secrets.CROSS_REPO_TOKEN }}
-        repository_owner: 'ferdnyc'
-        repository_name: 'libopenshot-audio'
-        workflow_name: 'libopenshot-audio-ci'
-        branch_name: 'develop'
-        download_path: '${{ github.workspace }}/extern'
-        download_filename: 'libopenshot-audio-${{ matrix.os }}.zip'
+        github_token: '${{ secrets.CROSS_REPO_TOKEN }}'
+        repo: ferdnyc/libopenshot-audio
+        workflow: linux-ci
+        branch: ci-artifacts
+        path: '${{ github.workspace }}/dist'
 
-    - name: Enable coverage scanning on Clang builds
-      uses: haya14busa/action-cond@v1
-      id: coverage
-      with:
-        cond: ${{ matrix.compiler == 'clang' }}
-        if_true: "-DENABLE_COVERAGE:BOOL=1"
-        if_false: "-DENABLE_COVERAGE:BOOL=0"
+    # - name: Enable coverage scanning on Clang builds
+    #   uses: haya14busa/action-cond@v1
+    #   id: coverage
+    #   with:
+    #     cond: ${{ matrix.compiler == 'clang' }}
+    #     if_true: "-DENABLE_COVERAGE:BOOL=1"
+    #     if_false: "-DENABLE_COVERAGE:BOOL=0"
 
-    - name: Install Linux dependencies
-      if: ${{ runner.os == 'Linux' }}
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install cmake swig doxygen graphviz curl lcov
-        sudo apt install qtbase5-dev qtbase5-dev-tools
-        sudo apt install libfdk-aac-dev libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libpostproc-dev libswresample-dev
-        sudo apt install libzmq3-dev libmagick++-dev libunittest++-dev
-
-    - name: Install macOS dependencies
-      if: ${{ runner.os == 'macOS' }}
-      shell: bash
-      run: |
-        brew update
-        brew install swig unittest-cpp doxygen ffmpeg qt5 python3 zeromq
+    # - name: Install Linux dependencies
+    #   if: ${{ runner.os == 'linux' }}
+    #   run: |
+    #     sudo apt update
+    #     sudo apt install cmake swig doxygen graphviz curl lcov
+    #     sudo apt install qtbase5-dev qtbase5-dev-tools
+    #     sudo apt install libfdk-aac-dev libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libpostproc-dev libswresample-dev
+    #     sudo apt install libzmq3-dev libmagick++-dev libunittest++-dev
+    #
+    # - name: Install macOS dependencies
+    #   if: ${{ runner.os == 'macos' }}
+    #   run: |
+    #     brew update
+    #     brew install swig unittest-cpp doxygen ffmpeg qt5 python3 zeromq
 
     - name: Install Windows dependencies
       uses: msys2/setup-msys2@v2
-      if: ${{ runner.os == 'Windows' }}
+      if: ${{ runner.os == 'windows' }}
       with:
         update: true
         install: >-
           mingw-w64-x86_64-${{ matrix.compiler }}
           mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-qt5
-          mingw-w64-x86_64-ffmpeg
-          mingw-w64-x86_64-zeromq
-          mingw-w64-x86_64-swig
+    #       mingw-w64-x86_64-qt5
+    #       mingw-w64-x86_64-ffmpeg
+    #       mingw-w64-x86_64-zeromq
+    #       mingw-w64-x86_64-swig
+    #       mingw-w64-x86_64-doxygen
+    #       mingw-w64-x86_64-graphviz
+    #       mingw-w64-x86_64-python3
 
-    - name: Build libopenshot
-      shell: bash
+    - name: Build
       run: |
-        if [ -d extern ]; then
-          pushd ${{ github.workspace }}/extern
-          unzip "libopenshot-audio-${{ matrix.os }}.zip" -d OpenShotAudio
-          popd
-        fi
         cmake -B build -S . \
-          -DCMAKE_INSTALL_PREFIX:PATH="build/dist" \
-          -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/extern/OpenShotAudio" \
-          -DCMAKE_BUILD_TYPE="Debug" \
+          -DCMAKE_INSTALL_PREFIX:PATH="${{ github.workspace }}/dist" \
+          -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/dist" \
+          -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_VERBOSE_MAKEFILES:BOOL=1 \
           "${{ steps.coverage.outputs.value }}"
-        cmake --build . -- VERBOSE=1
+        cmake --build build
 
-    - name: Test libopenshot
-      shell: bash
-      run: |
-        cmake --build build --target os_test -- VERBOSE=1
-
-    - name: Install libopenshot
-      shell: bash
-      run: |
-        cmake --build build --target install -- VERBOSE=1
-
-    - uses: codecov/codecov-action@v1
-      if: ${{ matrix.compiler == 'clang' }}
-      with:
-        file: build/coverage.info
+    # - name: Test libopenshot
+    #   run: cmake --build build --target os_test
+    #
+    # - name: Install libopenshot
+    #   run: cmake --install build
+    #
+    # - uses: codecov/codecov-action@v1
+    #   if: ${{ matrix.compiler == 'clang' }}
+    #   with:
+    #     file: build/coverage.info
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v2
       with:
         name: 'libopenshot-${{ matrix.os }}-${{ matrix.compiler }}'
-        path: '${{ github.workspace }}/build/dist'
+        path: '${{ github.workspace }}/dist'
