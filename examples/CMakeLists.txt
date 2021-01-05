@@ -40,10 +40,10 @@ target_compile_definitions(openshot-example PRIVATE
 	-DTEST_MEDIA_PATH="${TEST_MEDIA_PATH}" )
 
 # Link test executable to the new library
-target_link_libraries(openshot-example openshot)
+target_link_libraries(openshot-example OpenShot::Lib)
 
 add_executable(openshot-html-test ExampleHtml.cpp)
-target_link_libraries(openshot-html-test openshot Qt5::Gui)
+target_link_libraries(openshot-html-test OpenShot::Lib Qt5::Gui)
 
 ############### PLAYER EXECUTABLE ################
 # Create test executable
@@ -52,7 +52,7 @@ add_executable(openshot-player qt-demo/main.cpp)
 set_target_properties(openshot-player PROPERTIES AUTOMOC ON)
 
 # Link test executable to the new library
-target_link_libraries(openshot-player openshot)
+target_link_libraries(openshot-player OpenShot::Lib)
 
 ############### TEST BLACKMAGIC CAPTURE APP ################
 if (BLACKMAGIC_FOUND)
@@ -61,5 +61,5 @@ if (BLACKMAGIC_FOUND)
 			examples/ExampleBlackmagic.cpp)
 
 	# Link test executable to the new library
-	target_link_libraries(openshot-blackmagic openshot)
+	target_link_libraries(openshot-blackmagic OpenShot::Lib)
 endif()

@@ -142,21 +142,22 @@ target_sources(openshot PRIVATE
 
 # Set SONAME and other library properties
 set_target_properties(openshot PROPERTIES
-  AUTOMOC ON
   VERSION ${PROJECT_VERSION}
   SOVERSION ${PROJECT_SO_VERSION}
+  CXX_STANDARD 11
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS OFF
   INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+  AUTOMOC ON
+  EXPORT_NAME Lib
 )
 
 # Location of our includes, both internally and when installed
 target_include_directories(openshot
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/libopenshot>)
+)
 
 ################# LIBOPENSHOT-AUDIO ###################
 # Find JUCE-based openshot Audio libraries
@@ -381,12 +382,17 @@ endif()
 ###############  LINK LIBRARY  #################
 # Link remaining dependency libraries
 if(DEFINED PROFILER)
-  target_link_libraries(openshot PUBLIC ${PROFILER})
+  target_link_libraries(openshot PRIVATE ${PROFILER})
 endif()
 
 if(WIN32)
   # Required for exception handling on Windows
-  target_link_libraries(openshot PUBLIC "imagehlp" "dbghelp" )
+  target_link_libraries(openshot PRIVATE "imagehlp" "dbghelp" )
+endif()
+
+# Create an alias of our future EXPORT target name, for consistency
+if(NOT TARGET OpenShot::Lib)
+  add_library(OpenShot::Lib ALIAS openshot)
 endif()
 
 ###
@@ -398,11 +404,11 @@ install(TARGETS openshot
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+  INCLUDES DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY})
 
 install(
   DIRECTORY .
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot
+  DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}
   FILES_MATCHING PATTERN "*.h"
 )
 

@@ -70,7 +70,7 @@ if (CMAKE_VERSION VERSION_GREATER 3.13)
   set_property(SOURCE openshot.i PROPERTY USE_TARGET_INCLUDE_DIRECTORIES True)
 elseif (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(SOURCE openshot.i PROPERTY
-    INCLUDE_DIRECTORIES $<TARGET_PROPERTY:openshot,INCLUDE_DIRECTORIES>)
+    INCLUDE_DIRECTORIES $<TARGET_PROPERTY:OpenShot::Lib,INCLUDE_DIRECTORIES>)
 endif ()
 
 ### Add the SWIG interface file (which defines all the SWIG methods)
@@ -86,7 +86,7 @@ set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
 
 ### Link the new python wrapper library with libopenshot
 target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC
-  ${PYTHON_LIBRARIES} openshot)
+  ${PYTHON_LIBRARIES} OpenShot::Lib)
 
 ######### INSTALL PATH ########
 if (NOT DEFINED PYTHON_MODULE_PATH AND DEFINED $ENV{PYTHON_MODULE_PATH})

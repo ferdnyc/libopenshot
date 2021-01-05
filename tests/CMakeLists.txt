@@ -24,10 +24,6 @@
 # along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
 ################################################################################
 
-# Test media path, used by unit tests for input data
-file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}/examples/" TEST_MEDIA_PATH)
-add_definitions( -DTEST_MEDIA_PATH="${TEST_MEDIA_PATH}" )
-
 ################### UNITTEST++ #####################
 # Find UnitTest++ libraries (used for unit testing)
 find_package(UnitTest++)
@@ -36,26 +32,9 @@ if (NOT UnitTest++_FOUND)
   set(TESTS_ENABLED OFF PARENT_SCOPE)
   return()
 endif()
-
-# Include UnitTest++ headers (needed for compile)
-include_directories(${UnitTest++_INCLUDE_DIRS})
-
 set_package_properties(UnitTest++ PROPERTIES
   TYPE RECOMMENDED
   PURPOSE "Unit testing framework")
-
-
-################# BLACKMAGIC DECKLINK ###################
-if(ENABLE_BLACKMAGIC)
-	# Find BlackMagic DeckLinkAPI libraries
-	find_package(BlackMagic)
-
-	if(BLACKMAGIC_FOUND)
-		# Include Blackmagic headers (needed for compile)
-		include_directories(${BLACKMAGIC_INCLUDE_DIR})
-	endif()
-endif()
-
 
 ###############  SET TEST SOURCE FILES  #################
 set(OPENSHOT_TEST_FILES
@@ -84,7 +63,29 @@ add_executable(openshot-test
   ${OPENSHOT_TEST_FILES} )
 
 # Link libraries to the new executable
-target_link_libraries(openshot-test openshot ${UnitTest++_LIBRARIES})
+target_link_libraries(openshot-test PRIVATE
+  OpenShot::Lib ${UnitTest++_LIBRARIES})
+
+# Include UnitTest++ headers (needed for compile)
+target_include_directories(openshot-test PRIVATE ${UnitTest++_INCLUDE_DIRS})
+
+# Test media path, used by unit tests for input data
+file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}/examples/" TEST_MEDIA_PATH)
+target_compile_definitions(openshot-test PRIVATE
+  TEST_MEDIA_PATH="${TEST_MEDIA_PATH}")
+
+################# BLACKMAGIC DECKLINK ###################
+if(ENABLE_BLACKMAGIC)
+	# Find BlackMagic DeckLinkAPI libraries
+	find_package(BlackMagic)
+
+	if(BLACKMAGIC_FOUND)
+		# Include Blackmagic headers (needed for compile)
+		target_include_directories(openshot-test PRIVATE
+      ${BLACKMAGIC_INCLUDE_DIR})
+	endif()
+endif()
+
 
 ##### RUNNING TESTS (make os_test / make test) #####
 # Hook up the 'make os_test' target to the 'openshot-test' executable,
@@ -92,4 +93,3 @@ target_link_libraries(openshot-test openshot ${UnitTest++_LIBRARIES})
 if(NOT ENABLE_COVERAGE)
   add_custom_target(os_test COMMAND openshot-test)
 endif()
-

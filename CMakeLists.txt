@@ -68,17 +68,29 @@ include(GNUInstallDirs)
 
 # Collect and display summary of options/dependencies
 include(FeatureSummary)
+include(CMakeDependentOption)
 
 ################ OPTIONS ##################
 # Optional build settings for libopenshot
 option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
 option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
+option(ENABLE_MAGICK "Use ImageMagick, if available" ON)
+option(APPIMAGE_BUILD "Build to install in an AppImage (Linux only)" OFF)
+
 option(ENABLE_IWYU "Enable 'Include What You Use' scanner (CMake 3.3+)" OFF)
 option(ENABLE_TESTS "Build unit tests (requires UnitTest++)" ON)
 option(ENABLE_COVERAGE "Scan test coverage using gcov and report" OFF)
+
 option(ENABLE_DOCS "Build API documentation (requires Doxygen)" ON)
-option(APPIMAGE_BUILD "Build to install in an AppImage (Linux only)" OFF)
-option(ENABLE_MAGICK "Use ImageMagick, if available" ON)
+# Only present configuration for docs build if enabled
+cmake_dependent_option(
+  LIB_DOCS_AUTO_BUILD
+  "Automatically generate documentation"
+  OFF "ENABLE_DOCS" OFF)  # Default OFF if not disabled
+cmake_dependent_option(
+  LIB_DOCS_AUTO_INSTALL
+  "Include documentation in the default install"
+  ON "ENABLE_DOCS" OFF)  # Default ON if not disabled
 
 # Legacy commandline override
 if (DISABLE_TESTS)
@@ -88,6 +100,16 @@ endif()
 if(DEFINED ENABLE_TESTS)
   set(ENABLE_TESTS ${ENABLE_TESTS} CACHE BOOL "Build unit tests (requires UnitTest++)" FORCE)
 endif()
+
+###
+### Header files installation
+###
+set(OPENSHOT_INCLUDE_DIRECTORY
+  "${CMAKE_INSTALL_INCLUDEDIR}/openshot"
+  CACHE BOOL "Header install destination (relative to <INSTALL_PREFIX>)"
+)
+add_feature_info("Header install path" TRUE
+  "Installing headers to <PREFIX>/${OPENSHOT_INCLUDE_DIRECTORY}")
 
 #### Work around a GCC < 9 bug with handling of _Pragma() in macros
 #### See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
@@ -141,7 +163,7 @@ add_subdirectory(bindings)
 configure_file(src/OpenShotVersion.h.in src/OpenShotVersion.h @ONLY)
 # We'll want that installed later
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/OpenShotVersion.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/libopenshot)
+        DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY})
 
 
 ################### DOCUMENTATION ###################
@@ -224,7 +246,7 @@ if (ENABLE_COVERAGE)
     NAME coverage
     LCOV_ARGS "--no-external"
     EXECUTABLE openshot-test
-    DEPENDENCIES openshot openshot-test
+    DEPENDENCIES OpenShot::Lib openshot-test
     EXCLUDE
       "bindings/*"
       "examples/*"
