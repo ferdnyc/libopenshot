@@ -21,7 +21,6 @@ jobs:
         compiler: [gcc]
     env:
       CC: ${{ matrix.compiler }}
-      RUNSHELL: ${{ steps.select_shell.outputs.value }}
     steps:
       - name: Check out source branch
         uses: actions/checkout@v2
@@ -32,26 +31,7 @@ jobs:
           repository: ferdnyc/libopenshot-audio
           tag: 'ci_latest'
           fileName: 'OpenShotAudio-${{ matrix.os }}-${{ matrix.compiler }}.zip'
-          out-file-path: 'dist'
-
-      - name: Extract OpenShotAudio (Unix)
-        if: ${{ runner.os != 'windows' }}
-        working-directory: dist/
-        run: unzip 'OpenShotAudio-${{ matrix.os }}-${{ matrix.compiler }}.zip'
-
-      - name: Extract OpenShotAudio (Windows)
-        if: ${{ runner.os == 'windows' }}
-        working-directory: dist/
-        shell: msys2 {0}
-        run: unzip 'OpenShotAudio-${{ matrix.os }}-${{ matrix.compiler }}.zip'
-
-      # - name: Enable coverage scanning on Linux Clang builds
-      #   if: ${{ runner.os == "linux" }}
-      #   uses: haya14busa/action-cond@v1
-      #   id: coverage
-      #   with:
-      #     cond: ${{ matrix.compiler == 'clang' }}
-      #     if_true: -DENABLE_COVERAGE:BOOL=1
+          out-file-path: dist/
 
       - name: Windows dependencies
         uses: msys2/setup-msys2@v2
@@ -78,7 +58,7 @@ jobs:
         run: |
           brew install qt5 ffmpeg zeromq
           brew install python3 swig unittest-cpp
-        #  brew install doxygen graphviz
+          brew install doxygen graphviz
 
       - name: Install Linux dependencies
         if: ${{ runner.os == 'linux' }}
@@ -88,9 +68,28 @@ jobs:
           sudo apt install libasound2-dev
           sudo apt install qtbase5-dev qtbase5-dev-tools libzmq3-dev
           sudo apt install libfdk-aac-dev libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libpostproc-dev libswresample-dev
+          sudo apt install libunittest++-dev doxygen graphviz
         # sudo apt install libmagick++-dev
-        # sudo apt install curl lcov libunittest++-dev
-        # sudo apt install doxygen graphviz
+        # sudo apt install curl lcov
+
+      - name: Extract OpenShotAudio (Unix)
+        if: ${{ runner.os != 'windows' }}
+        working-directory: dist/
+        run: unzip 'OpenShotAudio-${{ matrix.os }}-${{ matrix.compiler }}.zip'
+
+      - name: Extract OpenShotAudio (Windows)
+        if: ${{ runner.os == 'windows' }}
+        working-directory: dist/
+        shell: msys2 {0}
+        run: unzip 'OpenShotAudio-${{ matrix.os }}-${{ matrix.compiler }}.zip'
+
+      - name: Enable coverage scanning on Linux Clang builds
+        if: ${{ runner.os == 'linux' }}
+        uses: haya14busa/action-cond@v1
+        id: coverage
+        with:
+          cond: ${{ matrix.compiler == 'clang' }}
+          if_true: -DENABLE_COVERAGE:BOOL=1
 
       - name: Build (Unix)
         if: ${{ runner.os != 'windows' }}
@@ -98,6 +97,7 @@ jobs:
           cmake -B build -S . -DCMAKE_INSTALL_PREFIX:PATH="${{ github.workspace }}/dist/libopenshot" -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/dist/" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=1 ${{ steps.coverage.outputs.value }}
           cmake --build build
           cmake --build build --target os_test
+          cmake --build build --target OpenShotLib-doc
           cmake --install build
           cd dist
           zip -rm "libopenshot.zip" "libopenshot"
@@ -108,19 +108,15 @@ jobs:
         run: |
           cmake -B build -S . -G "MinGW Makefiles" "-DCMAKE_INSTALL_PREFIX:PATH=${{ github.workspace }}/dist/libopenshot" "-DOpenShotAudio_ROOT:PATH=${{ github.workspace }}/dist/" "-DCMAKE_BUILD_TYPE=Debug" "-DCMAKE_VERBOSE_MAKEFILE:BOOL=1" ${{ steps.coverage.outputs.value }}
           cmake --build build
-          cmake --build build --target os_test
           cmake --install build
           cd dist
           zip -rm "libopenshot.zip" "libopenshot"
 
-      # - name: Generate API docs
-      #   run: cmake --build build --target OpenShotLib-doc
-
-      # - name: Upload coverage data to Codecov
-      #   uses: codecov/codecov-action@v1
-      #   if: ${{ runner.os == 'linux' && matrix.compiler == 'clang' }}
-      #   with:
-      #     file: build/coverage.info
+      - name: Upload coverage data to Codecov
+        uses: codecov/codecov-action@v1
+        if: ${{ runner.os == 'linux' && matrix.compiler == 'clang' }}
+        with:
+          file: build/coverage.info
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v2
