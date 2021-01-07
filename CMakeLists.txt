@@ -73,6 +73,7 @@ include(CMakeDependentOption)
 ################ OPTIONS ##################
 # Optional build settings for libopenshot
 option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
+option(USE_VENDORED_CPPZMQ "Work around a missing zmq.hpp header" OFF)
 option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
 option(ENABLE_MAGICK "Use ImageMagick, if available" ON)
 option(APPIMAGE_BUILD "Build to install in an AppImage (Linux only)" OFF)

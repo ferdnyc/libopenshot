@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
+      # continue-on-error: true
     strategy:
       # This should be a subset of the OpenShotAudio matrix, but a
       # SUPERset of the 'release' job matrix below.
@@ -94,8 +94,9 @@ jobs:
       - name: Build (Unix)
         if: ${{ runner.os != 'windows' }}
         run: |
-          if [ "x${{ runner.os }}" != "xmacos" ]; then export PATH="/usr/local/opt/qt/bin:$PATH"; fi
-          cmake -B build -S . -DCMAKE_INSTALL_PREFIX:PATH="${{ github.workspace }}/dist/libopenshot" -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/dist/" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=1 ${{ steps.coverage.outputs.value }}
+          # Vendored CPPZMQ is a temporary measure, homebrew zeromq is broken
+          if [ "x${{ runner.os }}" == "xmacOS" ]; then export PATH="/usr/local/opt/qt/bin:$PATH"; export EXTRA_CMAKE_ARGS="-DUSE_VENDORED_CPPZMQ=1"; fi
+          cmake -B build -S . -DCMAKE_INSTALL_PREFIX:PATH="${{ github.workspace }}/dist/libopenshot" -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/dist/" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=1 ${{ steps.coverage.outputs.value }} ${EXTRA_CMAKE_ARGS}
           cmake --build build
           cmake --build build --target os_test
           cmake --build build --target libopenshot-doc
