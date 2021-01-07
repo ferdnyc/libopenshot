@@ -73,6 +73,7 @@ include(CMakeDependentOption)
 ################ OPTIONS ##################
 # Optional build settings for libopenshot
 option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
+option(USE_VENDORED_CPPZMQ "Work around a missing zmq.hpp header" OFF)
 option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
 option(ENABLE_MAGICK "Use ImageMagick, if available" ON)
 option(APPIMAGE_BUILD "Build to install in an AppImage (Linux only)" OFF)
@@ -237,6 +238,11 @@ if (TARGET ${PROJECT_NAME}-doc)
 endif()
 add_feature_info("${PROJECT_NAME} docs" LIB_DOCS_ENABLED "Build ${PROJECT_NAME} API documentation")
 
+if(NOT TARGET ${PROJECT_NAME}-doc)
+  # Dummy target to prevent failed build runs
+  add_custom_target(${PROJECT_NAME}-doc)
+endif()
+
 ############# PROCESS tests/ DIRECTORY ##############
 if(ENABLE_TESTS)
   set(TESTS_ENABLED TRUE) # May be overridden by tests/CMakeLists.txt
@@ -280,6 +286,9 @@ if(TARGET os_test)
     set(TEST_TARGET_NAME "os_test")
   endif()
   add_feature_info("Testrunner" ENABLE_TESTS "Run unit tests with 'make ${TEST_TARGET_NAME}'")
+else()
+  # Dummy target to prevent failed build runs
+  add_custom_target(os_test)
 endif()
 
 ###

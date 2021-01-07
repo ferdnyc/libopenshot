@@ -343,6 +343,7 @@ if (NOT jsoncpp_FOUND AND NOT DISABLE_BUNDLED_JSONCPP)
         ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/json/json-forwards.h
     )
   endif ()
+
   add_feature_info("jsoncpp (embedded)" TRUE
     "jsoncpp will be compiled from the bundled sources")
 endif ()
@@ -377,19 +378,20 @@ mark_as_advanced(QT_VERSION_STR)
 # Find FFmpeg libraries (used for video encoding / decoding)
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avformat avutil swscale)
 
-set(all_comps avcodec avformat avutil swscale)
+set(ff_all_comps avcodec avformat avutil swscale)
 if(TARGET FFmpeg::swresample)
-  list(APPEND all_comps swresample)
+  list(APPEND ff_all_comps swresample)
 else()
-  list(APPEND all_comps avresample)
+  list(APPEND ff_all_comps avresample)
 endif()
-set(version_comps avcodec avformat avutil)
+set(ff_version_comps avcodec avformat avutil)
 
-foreach(ff_comp IN LISTS all_comps)
+foreach(ff_comp IN LISTS ff_all_comps)
   if(TARGET FFmpeg::${ff_comp})
     target_link_libraries(openshot PUBLIC FFmpeg::${ff_comp})
+
     # Keep track of some FFmpeg lib versions, to embed in our version header
-    if(${ff_comp} IN_LIST version_comps)
+    if(${ff_comp} IN_LIST ff_version_comps)
       string(TOUPPER ${ff_comp} v_name)
       set(${v_name}_VERSION_STR ${${ff_comp}_VERSION}
         CACHE STRING "${ff_comp} version used" FORCE)
@@ -406,11 +408,11 @@ endforeach()
 find_package(OpenMP REQUIRED)
 
 if(NOT TARGET OpenMP::OpenMP_CXX)
-    # Older CMake versions (< 3.9) don't create find targets.
-    add_library(OpenMP_TARGET INTERFACE)
-    add_library(OpenMP::OpenMP_CXX ALIAS OpenMP_TARGET)
-    target_compile_options(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
-    target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
+  # Older CMake versions (< 3.9) don't create find targets.
+  add_library(OpenMP_TARGET INTERFACE)
+  add_library(OpenMP::OpenMP_CXX ALIAS OpenMP_TARGET)
+  target_compile_options(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
+  target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
 endif()
 
 target_link_libraries(openshot PRIVATE OpenMP::OpenMP_CXX)
@@ -422,15 +424,35 @@ target_link_libraries(openshot PRIVATE OpenMP::OpenMP_CXX)
 # Find ZeroMQ library (used for socket communication & logging)
 find_package(ZeroMQ REQUIRED) # Creates libzmq target
 
-# Some platforms package the header-only cppzmq C++ bindings separately,
-# others (Ubuntu) bundle them in with libzmq itself
-find_package(cppzmq QUIET) # Creates cppzmq target
-
 # Link ZeroMQ library
 if (TARGET libzmq)
   target_link_libraries(openshot PRIVATE libzmq)
 endif()
+
+# If we've been told to override, set it up before
+# we call find_package() to avoid grabbing a system
+# copy that might be present.
+if(USE_VENDORED_CPPZMQ AND NOT TARGET cppzmq)
+  add_library(cppzmq IMPORTED INTERFACE)
+  set_property(TARGET cppzmq PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES
+      "${PROJECT_SOURCE_DIR}/thirdparty"
+  )
+  install(FILES thirdparty/zmq.hpp
+    DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}
+  )
+  add_feature_info("cppzmq (embedded)" TRUE
+    "Using and installing a bundled copy of cppzmq")
+endif()
+
 # Include cppzmq headers, if not bundled into libzmq
+if(NOT TARGET cppzmq)
+  # Some platforms package the header-only cppzmq C++ bindings separately,
+  # others (Ubuntu) bundle them in with libzmq itself
+  find_package(cppzmq QUIET) # Creates cppzmq target
+endif()
+
+# Use 'em if we got 'em
 if (TARGET cppzmq)
   target_link_libraries(openshot PRIVATE cppzmq)
 endif()
