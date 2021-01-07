@@ -438,7 +438,7 @@ if(USE_VENDORED_CPPZMQ AND NOT TARGET cppzmq)
     INTERFACE_INCLUDE_DIRECTORIES
       "${PROJECT_SOURCE_DIR}/thirdparty"
   )
-  install(FILES thirdparty/zmq.hpp
+  install(FILES "${PROJECT_SOURCE_DIR}/thirdparty/zmq.hpp"
     DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}
   )
   add_feature_info("cppzmq (embedded)" TRUE
