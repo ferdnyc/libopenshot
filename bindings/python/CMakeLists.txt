@@ -54,9 +54,6 @@ if (CMAKE_VERSION VERSION_LESS 3.12)
     "${PROJECT_BINARY_DIR}/src")
 endif()
 
-# Configure SWIG for Python3 support
-list(APPEND CMAKE_SWIG_FLAGS py3)
-
 ### Enable C++ in SWIG
 set_property(SOURCE openshot.i PROPERTY CPLUSPLUS ON)
 set_property(SOURCE openshot.i PROPERTY SWIG_MODULE_NAME openshot)
