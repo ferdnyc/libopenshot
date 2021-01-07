@@ -99,6 +99,59 @@ set(OPENSHOT_SOURCES
   TimelineBase.cpp
   Timeline.cpp)
 
+set(OPENSHOT_PUBLIC_HEADERS
+  AudioBufferSource.h
+  AudioDeviceInfo.h
+  AudioReaderSource.h
+  AudioResampler.h
+  CacheBase.h
+  CacheDisk.h
+  CacheMemory.h
+  ChannelLayouts.h
+  ChunkReader.h
+  ChunkWriter.h
+  Color.h
+  Clip.h
+  ClipBase.h
+  Coordinate.h
+  CrashHandler.h
+  DummyReader.h
+  ReaderBase.h
+  RendererBase.h
+  WriterBase.h
+  EffectBase.h
+  EffectInfo.h
+  Effects.h
+  Enums.h
+  Exceptions.h
+  FFmpegReader.h
+  FFmpegWriter.h
+  FFmpegUtilities.h
+  Fraction.h
+  Frame.h
+  FrameMapper.h
+  Json.h
+  KeyFrame.h
+  OpenShot.h
+  PlayerBase.h
+  Point.h
+  Profiles.h
+  QtHtmlReader.h
+  QtImageReader.h
+  QtPlayer.h
+  QtTextReader.h
+  QtUtilities.h
+  Settings.h
+  TimelineBase.h
+  Timeline.h
+  ${CMAKE_CURRENT_BINARY_DIR}/OpenShotVersion.h
+)
+
+set(OPENSHOT_PRIVATE_HEADERS
+  OpenMPUtilities.h
+  ZmqLogger.h
+)
+
 # Video effects
 set(EFFECTS_SOURCES
   effects/Bars.cpp
@@ -115,7 +168,26 @@ set(EFFECTS_SOURCES
   effects/Pixelate.cpp
   effects/Saturation.cpp
   effects/Shift.cpp
-  effects/Wave.cpp)
+  effects/Wave.cpp
+)
+
+set(EFFECTS_PUBLIC_HEADERS
+  effects/Bars.h
+  effects/Blur.h
+  effects/Brightness.h
+  effects/Caption.h
+  effects/ChromaKey.h
+  effects/ColorShift.h
+  effects/Crop.h
+  effects/Deinterlace.h
+  effects/Hue.h
+  effects/Mask.h
+  effects/Negate.h
+  effects/Pixelate.h
+  effects/Saturation.h
+  effects/Shift.h
+  effects/Wave.h
+)
 
 # Qt video player components
 set(QT_PLAYER_SOURCES
@@ -125,7 +197,18 @@ set(QT_PLAYER_SOURCES
   Qt/VideoCacheThread.cpp
   Qt/VideoPlaybackThread.cpp
   Qt/VideoRenderer.cpp
-  Qt/VideoRenderWidget.cpp)
+  Qt/VideoRenderWidget.cpp
+)
+
+set(QT_PLAYER_PUBLIC_HEADERS
+  Qt/AudioPlaybackThread.h
+  Qt/PlayerDemo.h
+  Qt/PlayerPrivate.h
+  Qt/VideoCacheThread.h
+  Qt/VideoPlaybackThread.h
+  Qt/VideoRenderer.h
+  Qt/VideoRenderWidget.h
+)
 
 # Disable RPATH
 # set(CMAKE_MACOSX_RPATH 0)
@@ -138,7 +221,7 @@ target_sources(openshot PRIVATE
   ${OPENSHOT_SOURCES}
   ${EFFECTS_SOURCES}
   ${QT_PLAYER_SOURCES}
-  )
+)
 
 # Set SONAME and other library properties
 set_target_properties(openshot PROPERTIES
@@ -173,7 +256,7 @@ target_link_libraries(openshot PUBLIC OpenShot::Audio)
 ###
 
 # Find the ImageMagick++ library
-find_package(ImageMagick COMPONENTS Magick++ MagickWand MagickCore)
+find_package(ImageMagick COMPONENTS Magick++ MagickCore)
 
 if(ImageMagick_FOUND)
   if(NOT TARGET ImageMagick::Magick++ AND NOT TARGET Magick++_TARGET)
@@ -211,6 +294,12 @@ if(ImageMagick_FOUND)
     ImageReader.cpp
     ImageWriter.cpp
     TextReader.cpp)
+  list(APPEND OPENSHOT_PUBLIC_HEADERS
+    MagickUtilities.h
+    ImageReader.h
+    ImageWriter.h
+    TextReader.h
+  )
 
   # define a preprocessor macro (used in the C++ source)
   target_compile_definitions(openshot PUBLIC USE_IMAGEMAGICK=1)
@@ -219,7 +308,8 @@ if(ImageMagick_FOUND)
   # Link with ImageMagick library
   target_link_libraries(openshot PUBLIC ImageMagick::Magick++)
 
-  set(HAVE_IMAGEMAGICK TRUE CACHE BOOL "Building with ImageMagick support" FORCE)
+  set(HAVE_IMAGEMAGICK TRUE
+    CACHE BOOL "Building with ImageMagick support" FORCE)
   mark_as_advanced(HAVE_IMAGEMAGICK)
 endif()
 
@@ -234,16 +324,27 @@ if (USE_SYSTEM_JSONCPP)
 endif ()
 
 if (NOT jsoncpp_FOUND AND NOT DISABLE_BUNDLED_JSONCPP)
-  message(STATUS "Using embedded jsoncpp (not found or USE_SYSTEM_JSONCPP disabled)")
+  message(STATUS
+    "Using embedded jsoncpp (not found or USE_SYSTEM_JSONCPP disabled)")
+
   if (NOT TARGET jsoncpp_lib)
     add_library(jsoncpp_lib INTERFACE)
     target_include_directories(jsoncpp_lib INTERFACE
       "${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp")
-    target_sources(jsoncpp_lib INTERFACE "${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/jsoncpp.cpp")
+    target_sources(jsoncpp_lib INTERFACE
+      "${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/jsoncpp.cpp")
+
     # Because this satisfies the requirement, an installed JsonCpp is optional
     set_package_properties(jsoncpp PROPERTIES TYPE OPTIONAL)
+
+    # Make sure the headers get installed with libopenshot
+    set(JSONCPP_BUNDLED_HEADERS
+        ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/json/json.h
+        ${PROJECT_SOURCE_DIR}/thirdparty/jsoncpp/json/json-forwards.h
+    )
   endif ()
-  add_feature_info("jsoncpp (embedded)" TRUE "jsoncpp will be compiled from the bundled sources")
+  add_feature_info("jsoncpp (embedded)" TRUE
+    "jsoncpp will be compiled from the bundled sources")
 endif ()
 
 if (jsoncpp_FOUND)
@@ -274,9 +375,14 @@ mark_as_advanced(QT_VERSION_STR)
 
 ################### FFMPEG #####################
 # Find FFmpeg libraries (used for video encoding / decoding)
-find_package(FFmpeg REQUIRED COMPONENTS avcodec avdevice avformat avutil swscale)
+find_package(FFmpeg REQUIRED COMPONENTS avcodec avformat avutil swscale)
 
-set(all_comps avcodec avdevice avformat avfilter avutil postproc swscale swresample avresample)
+set(all_comps avcodec avformat avutil swscale)
+if(TARGET FFmpeg::swresample)
+  list(APPEND all_comps swresample)
+else()
+  list(APPEND all_comps avresample)
+endif()
 set(version_comps avcodec avformat avutil)
 
 foreach(ff_comp IN LISTS all_comps)
@@ -285,7 +391,8 @@ foreach(ff_comp IN LISTS all_comps)
     # Keep track of some FFmpeg lib versions, to embed in our version header
     if(${ff_comp} IN_LIST version_comps)
       string(TOUPPER ${ff_comp} v_name)
-      set(${v_name}_VERSION_STR ${${ff_comp}_VERSION} CACHE STRING "${ff_comp} version used" FORCE)
+      set(${v_name}_VERSION_STR ${${ff_comp}_VERSION}
+        CACHE STRING "${ff_comp} version used" FORCE)
       mark_as_advanced(${v_name}_VERSION_STR)
     endif()
   endif()
@@ -306,7 +413,7 @@ if(NOT TARGET OpenMP::OpenMP_CXX)
     target_link_libraries(OpenMP_TARGET INTERFACE ${OpenMP_CXX_FLAGS})
 endif()
 
-target_link_libraries(openshot PUBLIC OpenMP::OpenMP_CXX)
+target_link_libraries(openshot PRIVATE OpenMP::OpenMP_CXX)
 
 ###
 ### ZeroMQ
@@ -321,11 +428,11 @@ find_package(cppzmq QUIET) # Creates cppzmq target
 
 # Link ZeroMQ library
 if (TARGET libzmq)
-  target_link_libraries(openshot PUBLIC libzmq)
+  target_link_libraries(openshot PRIVATE libzmq)
 endif()
 # Include cppzmq headers, if not bundled into libzmq
 if (TARGET cppzmq)
-  target_link_libraries(openshot PUBLIC cppzmq)
+  target_link_libraries(openshot PRIVATE cppzmq)
 endif()
 
 ###
@@ -366,7 +473,14 @@ if (ENABLE_BLACKMAGIC)
       DecklinkInput.cpp
       DecklinkReader.cpp
       DecklinkOutput.cpp
-      DecklinkWriter.cpp)
+      DecklinkWriter.cpp
+    )
+    list(APPEND OPENSHOT_PUBLIC_HEADERS
+      DecklinkInput.h
+      DecklinkReader.h
+      DecklinkOutput.h
+      DecklinkWriter.h
+    )
 
     # Include Blackmagic headers (needed for compile)
     target_include_directories(openshot PRIVATE ${BLACKMAGIC_INCLUDE_DIR})
@@ -414,13 +528,24 @@ install(TARGETS openshot ${AUDIO_INSTALL_TARGET}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  INCLUDES DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY})
-
-install(
-  DIRECTORY .
-  DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}
-  FILES_MATCHING PATTERN "*.h"
+  INCLUDES DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}
 )
+
+# Install public includes
+install(FILES ${OPENSHOT_PUBLIC_HEADERS}
+  DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}
+)
+install(FILES ${EFFECTS_PUBLIC_HEADERS}
+  DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}/effects
+)
+install(FILES ${QT_PLAYER_PUBLIC_HEADERS}
+  DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}/Qt
+)
+if(DEFINED JSONCPP_BUNDLED_HEADERS)
+  install(FILES ${JSONCPP_BUNDLED_HEADERS}
+    DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY}/json
+  )
+endif()
 
 ############### CPACK PACKAGING ##############
 if(MINGW)

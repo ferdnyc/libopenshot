@@ -32,6 +32,8 @@
  */
 
 #include "FFmpegReader.h"
+#include "OpenMPUtilities.h"
+#include "ZmqLogger.h"
 
 #include "Clip.h"
 #include "Enums.h"
