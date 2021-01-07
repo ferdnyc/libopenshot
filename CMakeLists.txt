@@ -123,7 +123,7 @@ add_feature_info("Header install path" TRUE
 #endif()
 
 if(PACKAGED_BUILD)
-  set(PYTHON_MODULE_PATH "${CMAKE_INSTALL_PREFIX}/python/libopenshot"
+  set(PYTHON_MODULE_PATH "python/libopenshot"
     CACHE PATH "Install location for packaged Python modules" FORCE)
   set(OPENSHOT_LIBDIR "${PYTHON_MODULE_PATH}"
     CACHE PATH "Shared library destination path" FORCE)
