@@ -128,7 +128,7 @@ set(QT_PLAYER_SOURCES
   Qt/VideoRenderWidget.cpp)
 
 # Disable RPATH
-set(CMAKE_MACOSX_RPATH 0)
+# set(CMAKE_MACOSX_RPATH 0)
 
 ############### CREATE LIBRARY #################
 # Create shared openshot library
@@ -147,8 +147,9 @@ set_target_properties(openshot PROPERTIES
   CXX_STANDARD 11
   CXX_STANDARD_REQUIRED YES
   CXX_EXTENSIONS OFF
-  INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
   AUTOMOC ON
+  # INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+  FRAMEWORK TRUE
   EXPORT_NAME Lib
 )
 
@@ -395,15 +396,24 @@ if(NOT TARGET OpenShot::Lib)
   add_library(OpenShot::Lib ALIAS openshot)
 endif()
 
+if(APPLE)
+  set(OPENSHOT_INCLUDE_DIRECTORY "${CMAKE_INSTALL_LIBDIR}/openshot.framework/Headers")
+endif()
+
 ###
 ### INSTALL HEADERS & LIBRARY
 ###
 
+if(TARGET openshot-audio)
+  set(AUDIO_INSTALL_TARGET openshot-audio)
+endif()
+
 # Install primary library
-install(TARGETS openshot
+install(TARGETS openshot ${AUDIO_INSTALL_TARGET}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  FRAMEWORK DESTINATION ${CMAKE_INSTALL_LIBDIR}
   INCLUDES DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY})
 
 install(

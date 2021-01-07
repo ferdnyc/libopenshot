@@ -76,6 +76,7 @@ option(USE_SYSTEM_JSONCPP "Use system installed JsonCpp, if found" ON)
 option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
 option(ENABLE_MAGICK "Use ImageMagick, if available" ON)
 option(APPIMAGE_BUILD "Build to install in an AppImage (Linux only)" OFF)
+option(COMBINED_BUILD "Include audio library in build" OFF)
 
 option(ENABLE_IWYU "Enable 'Include What You Use' scanner (CMake 3.3+)" OFF)
 option(ENABLE_TESTS "Build unit tests (requires UnitTest++)" ON)
@@ -151,6 +152,9 @@ endif()
 ###
 ### Process subdirectories
 ###
+if(COMBINED_BUILD)
+  add_subdirectory(extern/libopenshot-audio)
+endif()
 add_subdirectory(src)
 add_subdirectory(examples)
 add_subdirectory(bindings)
