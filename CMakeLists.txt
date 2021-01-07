@@ -128,7 +128,7 @@ if(PACKAGED_BUILD)
   set(OPENSHOT_LIBDIR "${PYTHON_MODULE_PATH}"
     CACHE PATH "Shared library destination path" FORCE)
   endif()
-  add_feature("Packaged libraries" TRUE
+  add_feature_info("Packaged libraries" TRUE
     "Installing shared libraries into Python package dir")
 else()
   set(OPENSHOT_LIBDIR "${CMAKE_INSTALL_LIBDIR}"
