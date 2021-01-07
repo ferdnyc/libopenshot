@@ -28,6 +28,11 @@
  * along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <memory>
+
 #include "ChunkReader.h"
 #include "FFmpegReader.h"
 
