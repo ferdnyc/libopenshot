@@ -233,6 +233,11 @@ if (TARGET ${PROJECT_NAME}-doc)
 endif()
 add_feature_info("${PROJECT_NAME} docs" LIB_DOCS_ENABLED "Build ${PROJECT_NAME} API documentation")
 
+if(NOT TARGET ${PROJECT_NAME}-doc)
+  # Dummy target to prevent failed build runs
+  add_custom_target(${PROJECT_NAME}-doc)
+endif()
+
 ############# PROCESS tests/ DIRECTORY ##############
 if(ENABLE_TESTS)
   set(TESTS_ENABLED TRUE) # May be overridden by tests/CMakeLists.txt
@@ -276,6 +281,9 @@ if(TARGET os_test)
     set(TEST_TARGET_NAME "os_test")
   endif()
   add_feature_info("Testrunner" ENABLE_TESTS "Run unit tests with 'make ${TEST_TARGET_NAME}'")
+else()
+  # Dummy target to prevent failed build runs
+  add_custom_target(os_test)
 endif()
 
 ###
