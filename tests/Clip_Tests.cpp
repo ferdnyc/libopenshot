@@ -42,6 +42,7 @@
 #define DONT_SET_USING_JUCE_NAMESPACE 1
 #include "Clip.h"
 #include "effects/Negate.h"
+#include "FFmpegReader.h"
 #include "Frame.h"
 #include "Fraction.h"
 #include "Timeline.h"

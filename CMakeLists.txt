@@ -78,6 +78,7 @@ option(DISABLE_BUNDLED_JSONCPP "Don't fall back to bundled JsonCpp" OFF)
 option(ENABLE_MAGICK "Use ImageMagick, if available" ON)
 option(APPIMAGE_BUILD "Build to install in an AppImage (Linux only)" OFF)
 option(COMBINED_BUILD "Include audio library in build" OFF)
+option(PACKAGED_BUILD "Bundle libraries into the generated Python package" OFF)
 
 option(ENABLE_IWYU "Enable 'Include What You Use' scanner (CMake 3.3+)" OFF)
 option(ENABLE_TESTS "Build unit tests (requires UnitTest++)" ON)
@@ -104,14 +105,43 @@ if(DEFINED ENABLE_TESTS)
 endif()
 
 ###
-### Header files installation
+### Install destinations
 ###
+
+#if(APPLE)
+#set(OPENSHOT_INCLUDE_DIRECTORY
+#  "${CMAKE_INSTALL_LIBDIR}"
+#  CACHE BOOL "Header install prefix (same as framework prefix)"
+#)
+#else()
 set(OPENSHOT_INCLUDE_DIRECTORY
   "${CMAKE_INSTALL_INCLUDEDIR}/openshot"
   CACHE BOOL "Header install destination (relative to <INSTALL_PREFIX>)"
 )
 add_feature_info("Header install path" TRUE
   "Installing headers to <PREFIX>/${OPENSHOT_INCLUDE_DIRECTORY}")
+#endif()
+
+if(PACKAGED_BUILD)
+  set(PYTHON_MODULE_PATH "${CMAKE_INSTALL_PREFIX}/python/libopenshot"
+    CACHE PATH "Install location for packaged Python modules" FORCE)
+  set(OPENSHOT_LIBDIR "${PYTHON_MODULE_PATH}"
+    CACHE PATH "Shared library destination path" FORCE)
+  endif()
+  add_feature("Packaged libraries" TRUE
+    "Installing shared libraries into Python package dir")
+else()
+  set(OPENSHOT_LIBDIR "${CMAKE_INSTALL_LIBDIR}"
+    CACHE PATH "Shared library destination path")
+endif()
+
+if(WIN32 AND PACKAGED_BUILD)
+  set(OPENSHOT_RUNTIME_DIR "${OPENSHOT_LIBDIR}"
+    CACHE PATH "Runtime destination path" FORCE)
+else()
+  set(OPENSHOT_RUNTIME_DIR "${CMAKE_INSTALL_BINDIR}"
+    CACHE PATH "Runtime destination path" FORCE)
+endif()
 
 #### Work around a GCC < 9 bug with handling of _Pragma() in macros
 #### See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=55578
@@ -119,15 +149,6 @@ if ((${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") AND
     (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS "9.0.0"))
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -no-integrated-cpp")
 endif()
-
-#### Enable C++11 (for std::shared_ptr support)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-IF (WIN32)
-	SET_PROPERTY(GLOBAL PROPERTY WIN32 "WIN32")
-ENDIF(WIN32)
 
 ############## Code Coverage #########################
 if (ENABLE_COVERAGE AND NOT ENABLE_TESTS)
