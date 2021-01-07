@@ -54,6 +54,9 @@ if (CMAKE_VERSION VERSION_LESS 3.12)
     "${PROJECT_BINARY_DIR}/src")
 endif()
 
+# Configure SWIG for Python3 support
+list(APPEND CMAKE_SWIG_FLAGS py3)
+
 ### Enable C++ in SWIG
 set_property(SOURCE openshot.i PROPERTY CPLUSPLUS ON)
 set_property(SOURCE openshot.i PROPERTY SWIG_MODULE_NAME openshot)
@@ -82,7 +85,9 @@ endif()
 
 ### Set output name of target
 set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
-  PREFIX "_" OUTPUT_NAME "openshot")
+  PREFIX "_"
+  OUTPUT_NAME "openshot"
+)
 
 ### Link the new python wrapper library with libopenshot
 target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC

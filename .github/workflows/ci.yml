@@ -95,7 +95,7 @@ jobs:
         if: ${{ runner.os != 'windows' }}
         run: |
           # Vendored CPPZMQ is a temporary measure, homebrew zeromq is broken
-          if [ "x${{ runner.os }}" == "xmacOS" ]; then export PATH="/usr/local/opt/qt/bin:$PATH"; export EXTRA_CMAKE_ARGS="-DUSE_VENDORED_CPPZMQ=1"; fi
+          if [ "x${{ runner.os }}" == "xmacOS" ]; then export PATH="/usr/local/opt/qt/bin:$PATH"; export EXTRA_CMAKE_ARGS="-DENABLE_RUBY=0 -DUSE_VENDORED_CPPZMQ=1"; fi
           cmake -B build -S . -DCMAKE_INSTALL_PREFIX:PATH="${{ github.workspace }}/dist/libopenshot" -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/dist/" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=1 ${{ steps.coverage.outputs.value }} ${EXTRA_CMAKE_ARGS}
           cmake --build build
           cmake --build build --target os_test
