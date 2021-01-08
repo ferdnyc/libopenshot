@@ -154,6 +154,10 @@ jobs:
         # build matrix
         os: [ubuntu-20.04, macos-latest, windows-latest]
         compiler: [gcc, clang]
+        exclude:
+          # Windows clang isn't being our friend
+          - os: windows-latest
+            compiler: clang
     steps:
       - name: Download our artifact
         uses: actions/download-artifact@v2
