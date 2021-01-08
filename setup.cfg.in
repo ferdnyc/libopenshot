@@ -1,4 +1,0 @@
-[bdist_wheel]
-plat_name = linux_x64
-python_tag = py38
-

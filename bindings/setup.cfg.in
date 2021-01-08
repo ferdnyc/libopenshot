@@ -1,0 +1,39 @@
+[metadata]
+name = libopenshot
+version = 0.2.5-dev2
+author = Jonathan Thomas and others
+author_email = jonathan@openshot.org
+description = Python API bindings for OpenShot's C++ library
+long_description = file: DESCRIPTION.md
+long_description_content_type = text/markdown
+keywords = video, audio, multimedia, non-linear editing
+url = https://openshot.org/
+project_urls =
+	GitHub=https://www.github.com/OpenShot/libopenshot
+license = GPLv3+
+# This includes the license file(s) in the wheel.
+# https://wheel.readthedocs.io/en/stable/user_guide.html#including-license-files-in-the-generated-wheel-file
+license_files = COPYING
+classifiers =
+  Development Status :: 5 - Production/Stable
+  Environment :: X11 Applications
+  Environment :: X11 Applications :: GTK
+  Intended Audience :: End Users/Desktop
+  License :: OSI Approved :: GNU General Public License (GPL)
+  Operating System :: OS Independent
+  Operating System :: POSIX :: Linux
+  Programming Language :: Python
+  Programming Language :: Python :: 3
+  Topic :: Artistic Software
+  Topic :: Multimedia :: Video :: Non-Linear Editor
+  
+[options]
+python_requires = >= 3.5
+packages = libopenshot
+install_requires = 
+
+
+[bdist_wheel]
+plat_name = linux_x64
+python_tag = py38
+

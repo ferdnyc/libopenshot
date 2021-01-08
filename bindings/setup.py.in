@@ -1,0 +1,8 @@
+#!/usr/bin/python3
+import setuptools
+
+dist = setuptools.setup(
+    packages=setuptools.find_packages(),
+    include_package_data=True,
+    zip_safe=False,
+)

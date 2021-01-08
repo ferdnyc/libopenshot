@@ -1,0 +1,3 @@
+include setup.py
+include setup.cfg
+recursive-include libopenshot *
