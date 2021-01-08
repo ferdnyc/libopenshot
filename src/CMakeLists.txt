@@ -211,7 +211,7 @@ set(QT_PLAYER_PUBLIC_HEADERS
 )
 
 # Disable RPATH
-# set(CMAKE_MACOSX_RPATH 0)
+set(CMAKE_MACOSX_RPATH 0)
 
 ############### CREATE LIBRARY #################
 # Create shared openshot library
@@ -231,8 +231,12 @@ set_target_properties(openshot PROPERTIES
   CXX_STANDARD_REQUIRED YES
   CXX_EXTENSIONS OFF
   AUTOMOC ON
-  # INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
-  INSTALL_RPATH_USE_LINK_PATH ON
+  # XXX: THIS IS VERY BROKEN! The install prefix should never be resolved
+  # in the build context, only at install time. But, so far I don't have
+  # any better ideas for how to get the paths correct on macOS.
+  INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
+  INSTALL_RPATH_USE_LINK_PATH OFF
+  BUILD_WITH_INSTALL_RPATH ON
   EXPORT_NAME Lib
 )
 
