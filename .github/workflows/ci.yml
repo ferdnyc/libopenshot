@@ -29,11 +29,12 @@ jobs:
             # Windows clang isn't being our friend
           - sys: { os: windows-latest, shell: 'msys2 {0}' }
             compiler: { cc: clang, cxx: clang++ }
-        defaults:
-          shell: ${{ matrix.sys.shell }}
+    defaults:
+      run:
+        shell: ${{ matrix.sys.shell }}
     env:
-      CC:  ${{ matrix.cc.compiler }}
-      CXX: ${{ matrix.cxx.compiler }}
+      CC:  ${{ matrix.compiler.cc }}
+      CXX: ${{ matrix.compiler.cxx }}
     steps:
       - name: Check out source branch
         uses: actions/checkout@v2
@@ -47,8 +48,8 @@ jobs:
           out-file-path: '${{ github.workspace }}'
 
       - name: Windows dependencies
-        uses: msys2/setup-msys2@v2
         if: ${{ runner.os == 'windows' }}
+        uses: msys2/setup-msys2@v2
         with:
           release: false
           update: false
@@ -73,7 +74,7 @@ jobs:
           python3 swig unittest-cpp
           doxygen graphviz
 
-      - name: Install Linux dependencies
+      - name: Linux dependencies
         if: ${{ runner.os == 'linux' }}
         run: >-
           sudo apt update;
@@ -83,8 +84,13 @@ jobs:
           libswscale-dev libswresample-dev libmagick++-dev
           libunittest++-dev doxygen graphviz
 
-      - name: Extract OpenShotAudio
-        run: unzip 'OpenShotAudio-${{ matrix.sys.os }}-${{ matrix.compiler.cc }}.zip'
+      - name: Select CMake generator
+        uses: haya14busa/action-cond@v1
+        id: generator
+        with:
+          cond: ${{ runner.os == 'Windows' }}
+          if_true: 'MSYS Makefiles'
+          if_false: 'Unix Makefiles'
 
       - name: Enable coverage scanning on Linux Clang builds
         if: ${{ runner.os == 'linux' }}
@@ -94,12 +100,12 @@ jobs:
           cond: ${{ matrix.compiler.cc == 'clang' }}
           if_true: ' -DENABLE_COVERAGE:BOOL=1'
 
+      - name: Extract OpenShotAudio
+        run: unzip 'OpenShotAudio-${{ matrix.sys.os }}-${{ matrix.compiler.cc }}.zip'
+
       - name: Build
         # Vendored CPPZMQ is a temporary measure, homebrew zeromq is broken
         run: |
-          if [ "_${{ runner.os }} == "Windows" ]; then
-            export CMAKE_EXTRA="-G \"MSYS Makefiles\" ${CMAKE_EXTRA}";
-          fi
           if [ "_${{ runner.os }}" == "_macOS" ]; then
             export CMAKE_EXTRA="${CMAKE_EXTRA} -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 -DUSE_VENDORED_CPPZMQ=1";
           fi
@@ -155,7 +161,7 @@ jobs:
           prerelease: true
 
   upload:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     needs: [build, release]
     strategy:
       matrix:
