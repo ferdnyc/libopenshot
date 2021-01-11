@@ -29,8 +29,9 @@ jobs:
             # Windows clang isn't being our friend
           - sys: { os: windows-latest, shell: 'msys2 {0}' }
             compiler: { cc: clang, cxx: clang++ }
-        defaults:
-          shell: ${{ matrix.sys.shell }}
+    defaults:
+      run:
+        shell: ${{ matrix.sys.shell }}
     env:
       CC:  ${{ matrix.cc.compiler }}
       CXX: ${{ matrix.cxx.compiler }}
