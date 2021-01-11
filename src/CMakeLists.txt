@@ -430,7 +430,7 @@ find_package(ZeroMQ REQUIRED) # Creates libzmq target
 
 # Link ZeroMQ library
 if (TARGET libzmq)
-  target_link_libraries(openshot PRIVATE libzmq)
+  target_link_libraries(openshot PUBLIC libzmq)
 endif()
 
 # If we've been told to override, set it up before
@@ -458,7 +458,7 @@ endif()
 
 # Use 'em if we got 'em
 if (TARGET cppzmq)
-  target_link_libraries(openshot PRIVATE cppzmq)
+  target_link_libraries(openshot PUBLIC cppzmq)
 endif()
 
 ###
