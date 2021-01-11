@@ -114,7 +114,6 @@ set(OPENSHOT_PUBLIC_HEADERS
   Clip.h
   ClipBase.h
   Coordinate.h
-  CrashHandler.h
   DummyReader.h
   ReaderBase.h
   RendererBase.h
@@ -149,6 +148,7 @@ set(OPENSHOT_PUBLIC_HEADERS
 )
 
 set(OPENSHOT_PRIVATE_HEADERS
+  CrashHandler.h
   OpenMPUtilities.h
 )
 
