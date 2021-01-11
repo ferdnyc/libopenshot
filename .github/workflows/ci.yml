@@ -92,12 +92,15 @@ jobs:
           if_true: 'MSYS Makefiles'
           if_false: 'Unix Makefiles'
 
-      - name: Enable coverage scanning on Linux Clang builds
+      - name: Enable coverage scanning
+        # Only on gcc builds, now, because llvm-cov was ruining my day.
+        # Linux only, for no real reason other than the fact that
+        # running tasks on the other platforms is heavier and slower.
         if: ${{ runner.os == 'linux' }}
         uses: haya14busa/action-cond@v1
         id: coverage
         with:
-          cond: ${{ matrix.compiler.cc == 'clang' }}
+          cond: ${{ matrix.compiler.cc == 'gcc' }}
           if_true: ' -DENABLE_COVERAGE:BOOL=1'
 
       - name: Extract OpenShotAudio
