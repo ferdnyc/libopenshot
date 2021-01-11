@@ -144,12 +144,12 @@ set(OPENSHOT_PUBLIC_HEADERS
   Settings.h
   TimelineBase.h
   Timeline.h
+  ZmqLogger.h
   ${CMAKE_CURRENT_BINARY_DIR}/OpenShotVersion.h
 )
 
 set(OPENSHOT_PRIVATE_HEADERS
   OpenMPUtilities.h
-  ZmqLogger.h
 )
 
 # Video effects
