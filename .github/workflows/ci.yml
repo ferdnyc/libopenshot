@@ -107,12 +107,12 @@ jobs:
         # Vendored CPPZMQ is a temporary measure, homebrew zeromq is broken
         run: |
           if [ "_${{ runner.os }}" == "_macOS" ]; then
-            export CMAKE_EXTRA="${CMAKE_EXTRA} -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 -DUSE_VENDORED_CPPZMQ=1";
+            export CMAKE_EXTRA="${CMAKE_EXTRA} -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 -DUSE_VENDORED_CPPZMQ=1 -DQt5_DIR=/usr/local/opt/qt/lib/cmake/Qt5";
           fi
           if [ "_${{ runner.os }}_${{ matrix.compiler.cc }}" == "_macOS_clang" ]; then
             export CMAKE_EXTRA="${CMAKE_EXTRA} -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++ -DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++";
           fi
-          cmake -B build -S . ${CMAKE_EXTRA} -DCMAKE_INSTALL_PREFIX:PATH="${{ github.workspace }}/dist" -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/dist/" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=1 -DENABLE_RUBY=0 ${{ steps.coverage.outputs.value }}
+          cmake -B build -S . -G "${{ steps.generator.outputs.value }}" ${CMAKE_EXTRA} -DCMAKE_INSTALL_PREFIX:PATH="$(pwd)/dist" -DOpenShotAudio_ROOT:PATH="$(pwd)/dist/" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=1 -DENABLE_RUBY=0 ${{ steps.coverage.outputs.value }}
           cmake --build build
 
       - name: Run unit tests
