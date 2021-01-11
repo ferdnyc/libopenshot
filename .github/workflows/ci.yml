@@ -10,21 +10,30 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.sys.os }}
       # continue-on-error: true
     strategy:
       # This should be a subset of the OpenShotAudio matrix, but a
       # SUPERset of the 'release' job matrix below.
       # This ensures there are no failures due to missing builds.
       matrix:
-        os: [ubuntu-20.04, macos-latest, windows-latest]
-        compiler: [gcc, clang]
+        sys:
+          - { os: ubuntu-18.04,   shell: bash        }
+          - { os: ubuntu-20.04,   shell: bash        }
+          - { os: macos-latest,   shell: bash        }
+          - { os: windows-latest, shell: 'msys2 {0}' }
+        compiler:
+          - { cc: gcc,   cxx: g++     }
+          - { cc: clang, cxx: clang++ }
         exclude:
-          # Windows clang isn't being our friend
-          - os: windows-latest
-            compiler: clang
+            # Windows clang isn't being our friend
+          - sys: { os: windows-latest, shell: 'msys2 {0}' }
+            compiler: { cc: clang, cxx: clang++ }
+        defaults:
+          shell: ${{ matrix.sys.shell }}
     env:
-      CC: ${{ matrix.compiler }}
+      CC:  ${{ matrix.cc.compiler }}
+      CXX: ${{ matrix.cxx.compiler }}
     steps:
       - name: Check out source branch
         uses: actions/checkout@v2
@@ -34,7 +43,7 @@ jobs:
         with:
           repository: ferdnyc/libopenshot-audio
           tag: 'ci_latest'
-          fileName: 'OpenShotAudio-${{ matrix.os }}-${{ matrix.compiler }}.zip'
+          fileName: 'OpenShotAudio-${{ matrix.sys.os }}-${{ matrix.compiler.cc }}.zip'
           out-file-path: '${{ github.workspace }}'
 
       - name: Windows dependencies
@@ -59,10 +68,10 @@ jobs:
 
       - name: macOS dependencies
         if: ${{ runner.os == 'macos' }}
-        run: |
+        run: >-
           brew install qt5 ffmpeg zeromq libomp
-          brew install python3 swig unittest-cpp
-          brew install doxygen graphviz
+          python3 swig unittest-cpp
+          doxygen graphviz
 
       - name: Install Linux dependencies
         if: ${{ runner.os == 'linux' }}
@@ -74,54 +83,54 @@ jobs:
           libswscale-dev libswresample-dev libmagick++-dev
           libunittest++-dev doxygen graphviz
 
-      - name: Extract OpenShotAudio (Unix)
-        if: ${{ runner.os != 'windows' }}
-        run: unzip 'OpenShotAudio-${{ matrix.os }}-${{ matrix.compiler }}.zip'
-
-      - name: Extract OpenShotAudio (Windows)
-        if: ${{ runner.os == 'windows' }}
-        shell: msys2 {0}
-        run: unzip 'OpenShotAudio-${{ matrix.os }}-${{ matrix.compiler }}.zip'
+      - name: Extract OpenShotAudio
+        run: unzip 'OpenShotAudio-${{ matrix.sys.os }}-${{ matrix.compiler.cc }}.zip'
 
       - name: Enable coverage scanning on Linux Clang builds
         if: ${{ runner.os == 'linux' }}
         uses: haya14busa/action-cond@v1
         id: coverage
         with:
-          cond: ${{ matrix.compiler == 'clang' }}
-          if_true: -DENABLE_COVERAGE:BOOL=1
+          cond: ${{ matrix.compiler.cc == 'clang' }}
+          if_true: ' -DENABLE_COVERAGE:BOOL=1'
 
-      - name: Build (Unix)
-        if: ${{ runner.os != 'windows' }}
+      - name: Build
+        # Vendored CPPZMQ is a temporary measure, homebrew zeromq is broken
         run: |
-          # Vendored CPPZMQ is a temporary measure, homebrew zeromq is broken
-          if [ "x${{ runner.os }}" == "xmacOS" ]; then export PATH="/usr/local/opt/qt/bin:$PATH"; export EXTRA_CMAKE_ARGS="-DENABLE_RUBY=0 -DUSE_VENDORED_CPPZMQ=1"; fi
-          cmake -B build -S . -DCMAKE_INSTALL_PREFIX:PATH="${{ github.workspace }}/dist" -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/dist/" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=1 ${{ steps.coverage.outputs.value }} ${EXTRA_CMAKE_ARGS}
+          if [ "_${{ runner.os }} == "Windows" ]; then
+            export CMAKE_EXTRA="-G \"MSYS Makefiles\" ${CMAKE_EXTRA}";
+          fi
+          if [ "_${{ runner.os }}" == "_macOS" ]; then
+            export CMAKE_EXTRA="${CMAKE_EXTRA} -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 -DUSE_VENDORED_CPPZMQ=1";
+          fi
+          if [ "_${{ runner.os }}_${{ matrix.compiler.cc }}" == "_macOS_clang" ]; then
+            export CMAKE_EXTRA="${CMAKE_EXTRA} -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++ -DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++";
+          fi
+          cmake -B build -S . ${CMAKE_EXTRA} -DCMAKE_INSTALL_PREFIX:PATH="${{ github.workspace }}/dist" -DOpenShotAudio_ROOT:PATH="${{ github.workspace }}/dist/" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_VERBOSE_MAKEFILE:BOOL=1 -DENABLE_RUBY=0 ${{ steps.coverage.outputs.value }}
           cmake --build build
-          cmake --build build --target os_test
-          cmake --build build --target libopenshot-doc
+
+      - name: Run unit tests
+        run: cmake --build build --target os_test
+
+      - name: Generate documentation, on Linux
+        if: ${{ runner.os == 'linux' }}
+        run: cmake --build build --target libopenshot-doc
+
+      - name: Install and export job artifact
+        run: |
           cmake --install build
           zip -rm libopenshot.zip dist
 
-      - name: Build (Windows)
-        if: ${{ runner.os == 'windows' }}
-        shell: msys2 {0}
-        run: |
-          cmake -B build -S . -G "MinGW Makefiles" "-DCMAKE_INSTALL_PREFIX:PATH=${{ github.workspace }}/dist" "-DOpenShotAudio_ROOT:PATH=${{ github.workspace }}/dist/" "-DCMAKE_BUILD_TYPE=Debug" "-DCMAKE_VERBOSE_MAKEFILE:BOOL=1" ${{ steps.coverage.outputs.value }}
-          cmake --build build
-          cmake --install build
-          zip -rm "libopenshot.zip" "dist"
-
       - name: Upload coverage data to Codecov
         uses: codecov/codecov-action@v1
-        if: ${{ runner.os == 'linux' && matrix.compiler == 'clang' }}
+        if: '${{ steps.coverage.outputs.value }}'
         with:
           file: build/coverage.info
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v2
         with:
-          name: 'OpenShotLib-${{ matrix.os }}-${{ matrix.compiler }}'
+          name: 'OpenShotLib-${{ matrix.sys.os }}-${{ matrix.compiler.cc }}'
           path: '${{ github.workspace }}/libopenshot.zip'
 
   release:
@@ -150,9 +159,9 @@ jobs:
     needs: [build, release]
     strategy:
       matrix:
-        # Subset of both the 'build' matrix above, and the OpenShotAudio
-        # build matrix
-        os: [ubuntu-20.04, macos-latest, windows-latest]
+        # Subset or equivalent to both the 'build' job matrix above, and
+        # the OpenShotAudio build matrix
+        os: [ubuntu-18.04, ubuntu-20.04, macos-latest, windows-latest]
         compiler: [gcc, clang]
         exclude:
           # Windows clang isn't being our friend
@@ -165,7 +174,7 @@ jobs:
           name: 'OpenShotLib-${{ matrix.os }}-${{ matrix.compiler }}'
           path: '${{ github.workspace }}'
 
-      - name: Add files
+      - name: Attach artifact to release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -174,3 +183,4 @@ jobs:
           asset_path: libopenshot.zip
           asset_name: 'OpenShotLib-${{ matrix.os }}-${{ matrix.compiler }}.zip'
           asset_content_type: application/zip
+
