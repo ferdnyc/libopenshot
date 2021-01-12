@@ -1,0 +1,9 @@
+include setup.cfg
+include setup.py
+include pyproject.toml
+include MANIFEST.in
+recursive-include libopenshot *
+
+global-exclude *__pycache__*
+global-exclude *pyc
+global-exclude .git

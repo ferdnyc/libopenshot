@@ -1,0 +1,15 @@
+[metadata]
+name = libopenshot
+version = 0.2.5+git.2
+url = https://openshot.org/
+license = GNU GPL v.3
+author = Jonathan Thomas and others
+author_email = jonathan@openshot.org
+maintainer = Jonathan Thomas
+maintainer_email = jonathan@openshot.org
+description = Create and edit stunning videos, movies, and animations
+
+[options]
+packages = libopenshot
+include_package_data = True
+
