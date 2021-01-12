@@ -54,9 +54,13 @@ if (CMAKE_VERSION VERSION_LESS 3.12)
     "${PROJECT_BINARY_DIR}/src")
 endif()
 
+set(PYTHON_SWIG_WRAPPER_DIR "${PROJECT_BINARY_DIR}/${PROJECT_NAME}")
+
 ### Enable C++ in SWIG
 set_property(SOURCE openshot.i PROPERTY CPLUSPLUS ON)
-set_property(SOURCE openshot.i PROPERTY SWIG_MODULE_NAME openshot)
+set_property(SOURCE openshot.i
+  PROPERTY OUTPUT_DIR ${PYTHON_SWIG_WRAPPER_DIR})
+
 
 ### Suppress a ton of warnings in the generated SWIG C++ code
 set(SWIG_CXX_FLAGS "-Wno-unused-variable -Wno-unused-function \
@@ -77,20 +81,26 @@ endif ()
 if (CMAKE_VERSION VERSION_LESS 3.8.0)
   swig_add_module(pyopenshot python openshot.i)
 else()
-  swig_add_library(pyopenshot LANGUAGE python SOURCES openshot.i)
+  swig_add_library(pyopenshot
+    LANGUAGE python
+    SOURCES openshot.i
+    OUTPUT_DIR ${PYTHON_SWIG_WRAPPER_DIR}
+    OUTFILE_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  )
 endif()
 
 ### Set output name of target
 set_target_properties(${SWIG_MODULE_pyopenshot_REAL_NAME} PROPERTIES
   PREFIX "_"
   OUTPUT_NAME "openshot"
+  LIBRARY_OUTPUT_DIRECTORY "${PYTHON_SWIG_WRAPPER_DIR}"
 )
 
 ### Link the new python wrapper library with libopenshot
 target_link_libraries(${SWIG_MODULE_pyopenshot_REAL_NAME} PUBLIC
   ${PYTHON_LIBRARIES} OpenShot::Lib)
 
-######### INSTALL PATH ########
+######## INSTALL PATH ########
 if (NOT DEFINED PYTHON_MODULE_PATH AND DEFINED $ENV{PYTHON_MODULE_PATH})
   set(PYTHON_MODULE_PATH $ENV{PYTHON_MODULE_PATH})
 endif()
@@ -122,5 +132,5 @@ message(STATUS "PYTHON_MODULE_PATH: ${CMAKE_INSTALL_PREFIX}/${PYTHON_MODULE_PATH
 ### Install Python bindings
 install(TARGETS ${SWIG_MODULE_pyopenshot_REAL_NAME}
   DESTINATION ${PYTHON_MODULE_PATH} )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/openshot.py
+install(FILES ${PYTHON_SWIG_WRAPPER_DIR}/openshot.py
   DESTINATION ${PYTHON_MODULE_PATH} )

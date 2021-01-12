@@ -190,6 +190,14 @@ configure_file(src/OpenShotVersion.h.in src/OpenShotVersion.h @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/src/OpenShotVersion.h
         DESTINATION ${OPENSHOT_INCLUDE_DIRECTORY})
 
+# Set up Python packaging environment
+configure_file(bindings/python/__init__.py.in ${CMAKE_CURRENT_BINARY_DIR}/libopenshot/__init__.py @ONLY)
+configure_file(bindings/python/setup.cfg.in ${CMAKE_CURRENT_BINARY_DIR}/setup.cfg @ONLY)
+configure_file(bindings/python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py @ONLY)
+configure_file(bindings/python/MANIFEST.in.in ${CMAKE_CURRENT_BINARY_DIR}/MANIFEST.in @ONLY)
+configure_file(bindings/python/pyproject.toml.in ${CMAKE_CURRENT_BINARY_DIR}/pyproject.toml @ONLY)
+configure_file(bindings/python/requirements.txt.in ${CMAKE_CURRENT_BINARY_DIR}/requirements.txt @ONLY)
+
 
 ################### DOCUMENTATION ###################
 # Find Doxygen (used for documentation)
