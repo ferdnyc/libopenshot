@@ -125,9 +125,30 @@ jobs:
         if: ${{ runner.os == 'linux' }}
         run: cmake --build build --target libopenshot-doc
 
+      - name: Build Python package for libopenshot
+        working-directory: build
+        run: |
+          python3 -m venv venv
+          source ./venv/bin/activate
+          python3 -m pip install -r requirements.txt
+          python3 setup.py bdist_wheel
+
+      - name: Auditwheel fixup (Linux)
+        if: ${{ runner.os == 'linux' }}
+        working-directory: build
+        run: auditwheel -v repair -w '${{ github.workspace }}/dist' --plat linux_x86_64 "dist/libopenshot*"
+
+      - name: Delocate fixup (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        working-directory: build
+        run: delocate-wheel -v -w '${{ github.workspace }}/dist' "dist/libopenshot*"
+
       - name: Install and export job artifact
         run: |
           cmake --install build
+          if [ "x${{ runner.os }}" == "xWindows" ]; then
+            cp "build/dist/*.whl" dist/;
+          fi
           zip -rm libopenshot.zip dist
 
       - name: Upload coverage data to Codecov
@@ -192,4 +213,3 @@ jobs:
           asset_path: libopenshot.zip
           asset_name: 'OpenShotLib-${{ matrix.os }}-${{ matrix.compiler }}.zip'
           asset_content_type: application/zip
-
