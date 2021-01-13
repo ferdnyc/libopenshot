@@ -31,14 +31,16 @@
 #ifndef OPENSHOT_AUDIOREADERSOURCE_H
 #define OPENSHOT_AUDIOREADERSOURCE_H
 
-#include <iomanip>
+#include <memory>
+#include <JuceHeader.h>
 #include "ReaderBase.h"
-#include "JuceHeader.h"
+
+namespace juce { struct AudioSourceChannelInfo; }
 
 /// This namespace is the default namespace for all code in the openshot library
 namespace openshot
 {
-
+    class Frame;
 	/**
 	 * @brief This class is used to expose any ReaderBase derived class as an AudioSource in JUCE.
 	 *
@@ -50,7 +52,6 @@ namespace openshot
 		int position; /// The position of the audio source (index of buffer)
 		bool repeat; /// Repeat the audio source when finished
 		int size; /// The size of the internal buffer
-		juce::AudioSampleBuffer *buffer; /// The audio sample buffer
 		int speed; /// The speed and direction to playback a reader (1=normal, 2=fast, 3=faster, -1=rewind, etc...)
 
 		ReaderBase *reader; /// The reader to pull samples from
@@ -59,6 +60,8 @@ namespace openshot
 		int64_t frame_position; /// The position of the current frame's buffer
 		double estimated_frame; /// The estimated frame position of the currently playing buffer
 		int estimated_samples_per_frame; /// The estimated samples per frame of video
+
+        juce::AudioSampleBuffer *buffer; /// The audio sample buffer
 
 		/// Get more samples from the reader
 		void GetMoreSamplesFromReader();

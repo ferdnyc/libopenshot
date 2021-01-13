@@ -31,8 +31,12 @@
 #ifndef OPENSHOT_AUDIOBUFFERSOURCE_H
 #define OPENSHOT_AUDIOBUFFERSOURCE_H
 
-#include <iomanip>
-#include "JuceHeader.h"
+#ifndef DONT_SET_USING_JUCE_NAMESPACE
+  #define DONT_SET_USING_JUCE_NAMESPACE 1
+#endif
+#include <JuceHeader.h>
+
+namespace juce { struct AudioSourceChannelInfo; }
 
 /// This namespace is the default namespace for all code in the openshot library
 namespace openshot

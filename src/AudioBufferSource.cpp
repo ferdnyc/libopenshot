@@ -29,8 +29,8 @@
  */
 
 #include "AudioBufferSource.h"
+#include <JuceHeader.h>
 
-using namespace std;
 using namespace openshot;
 
 // Default constructor
@@ -42,7 +42,7 @@ AudioBufferSource::AudioBufferSource(juce::AudioSampleBuffer *audio_buffer)
 AudioBufferSource::~AudioBufferSource()
 {
 	// forget the AudioSampleBuffer. It still exists; we just don't know about it.
-	buffer = NULL;
+	buffer = nullptr;
 }
 
 // Get the next block of audio samples

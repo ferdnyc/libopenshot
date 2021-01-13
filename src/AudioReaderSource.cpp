@@ -28,19 +28,24 @@
  * along with OpenShot Library. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <JuceHeader.h>
+
 #include "AudioReaderSource.h"
 
-using namespace std;
+#include "Exceptions.h"     // for OutOfBoundsFrame
+#include "Frame.h"          // for Frame
+#include "ZmqLogger.h"      // for ZmqLogger
+
 using namespace openshot;
 
 // Constructor that reads samples from a reader
 AudioReaderSource::AudioReaderSource(ReaderBase *audio_reader, int64_t starting_frame_number, int buffer_size)
-	: reader(audio_reader), frame_number(starting_frame_number),
-	  size(buffer_size), position(0), frame_position(0), estimated_frame(0), speed(1) {
-
-	// Initialize an audio buffer (based on reader)
-	buffer = new juce::AudioSampleBuffer(reader->info.channels, size);
-
+	: position(0), repeat(false), size(buffer_size), speed(1),
+	  reader(audio_reader), frame_number(starting_frame_number),
+	  frame_position(0), estimated_frame(0),
+	  estimated_samples_per_frame(0),
+      buffer(new juce::AudioSampleBuffer(reader->info.channels, size))
+{
 	// initialize the audio samples to zero (silence)
 	buffer->clear();
 }
@@ -50,7 +55,7 @@ AudioReaderSource::~AudioReaderSource()
 {
 	// Clear and delete the buffer
 	delete buffer;
-	buffer = NULL;
+	buffer = nullptr;
 }
 
 // Get more samples from the reader
@@ -168,7 +173,7 @@ juce::AudioSampleBuffer* AudioReaderSource::reverse_buffer(juce::AudioSampleBuff
 		buffer->addFrom(channel, 0, reversed->getReadPointer(channel), number_of_samples, 1.0f);
 
 	delete reversed;
-	reversed = NULL;
+	reversed = nullptr;
 
 	// return pointer or passed in object (so this method can be chained together)
 	return buffer;

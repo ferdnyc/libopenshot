@@ -31,11 +31,16 @@
 #ifndef OPENSHOT_RESAMPLER_H
 #define OPENSHOT_RESAMPLER_H
 
-#include "AudioBufferSource.h"
-#include "Exceptions.h"
-#include "JuceHeader.h"
+#ifndef DONT_SET_USING_JUCE_NAMESPACE
+  #define DONT_SET_USING_JUCE_NAMESPACE 1
+#endif
+#include <JuceHeader.h>
+
+namespace juce { class ResamplingAudioSource; }
 
 namespace openshot {
+	// Forward decls
+	class AudioBufferSource;
 
 	/**
 	 * @brief This class is used to resample audio data for many sequential frames.
@@ -49,13 +54,14 @@ namespace openshot {
 		juce::AudioSampleBuffer *resampled_buffer;
 		openshot::AudioBufferSource *buffer_source;
 		juce::ResamplingAudioSource *resample_source;
-		juce::AudioSourceChannelInfo resample_callback_buffer;
 
 		int num_of_samples;
 		int new_num_of_samples;
 		double dest_ratio;
 		double source_ratio;
 		bool isPrepared;
+
+        juce::AudioSourceChannelInfo resample_callback_buffer;
 
 	public:
 		/// Default constructor
