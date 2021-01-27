@@ -47,6 +47,10 @@
 #include <QPainter>
 #include <QTransform>
 
+#include <QImage>
+#include <QPainter>
+#include <QTransform>
+
 using namespace openshot;
 
 // Init default settings for a clip

@@ -36,7 +36,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <memory>
-#include "Exceptions.h"
+
 #include "ReaderBase.h"
 
 namespace openshot

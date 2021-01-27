@@ -32,6 +32,7 @@
 #include "OpenMPUtilities.h"
 #include "ZmqLogger.h"
 #include "ReaderBase.h"
+#include "Exceptions.h"
 
 #include <algorithm>
 #include <thread>    // for std::this_thread::sleep_for

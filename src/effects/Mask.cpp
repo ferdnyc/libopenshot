@@ -30,10 +30,11 @@
 
 #include "Mask.h"
 #include "ReaderBase.h"
-#include "OpenMPUtilities.h"
-#include "ChunkReader.h"
-#include "FFmpegReader.h"
 #include "QtImageReader.h"
+#include "ChunkReader.h"
+#include "OpenMPUtilities.h"
+#include "Exceptions.h"
+#include "FFmpegReader.h"
 #ifdef USE_IMAGEMAGICK
 	#include "ImageReader.h"
 #endif
@@ -70,7 +71,7 @@ void Mask::init_effect_details()
 
 // This method is required for all derived classes of EffectBase, and returns a
 // modified openshot::Frame object
-std::shared_ptr<Frame> Mask::GetFrame(std::shared_ptr<Frame> frame, int64_t frame_number) {
+std::shared_ptr<openshot::Frame> Mask::GetFrame(std::shared_ptr<openshot::Frame> frame, int64_t frame_number) {
 	// Get the mask image (from the mask reader)
 	std::shared_ptr<QImage> frame_image = frame->GetImage();
 

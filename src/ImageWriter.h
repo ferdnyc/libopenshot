@@ -50,6 +50,8 @@
 #include <unistd.h>
 #include "CacheMemory.h"
 #include "Exceptions.h"
+
+#include "OpenMPUtilities.h"
 #include "MagickUtilities.h"
 
 namespace openshot

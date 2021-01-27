@@ -31,6 +31,7 @@
 #include "Timeline.h"
 #include "OpenMPUtilities.h"
 #include "ZmqLogger.h"
+#include "Exceptions.h"
 
 using namespace openshot;
 

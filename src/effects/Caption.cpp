@@ -31,6 +31,7 @@
 #include <QPainter>
 
 #include "Caption.h"
+#include "Exceptions.h"
 #include "../Clip.h"
 #include "../Timeline.h"
 

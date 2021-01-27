@@ -34,6 +34,7 @@
 #include <memory>
 
 #include "ChunkReader.h"
+#include "Exceptions.h"
 #include "FFmpegReader.h"
 
 #include <QDir>
