@@ -29,6 +29,7 @@
  */
 
 #include "FrameMapper.h"
+#include "Exceptions.h"
 #include "Clip.h"
 #include "ZmqLogger.h"
 
@@ -369,8 +370,6 @@ std::shared_ptr<Frame> FrameMapper::GetOrCreateFrame(int64_t number)
 		return new_frame;
 
 	} catch (const ReaderClosed & e) {
-		// ...
-	} catch (const TooManySeeks & e) {
 		// ...
 	} catch (const OutOfBoundsFrame & e) {
 		// ...

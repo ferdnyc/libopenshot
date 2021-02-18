@@ -36,6 +36,7 @@
 #include "ReaderBase.h"
 
 #include <memory>
+
 #include "Enums.h"
 
 class QImage;

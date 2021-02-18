@@ -34,11 +34,13 @@
 // Require ImageMagick support
 #ifdef USE_IMAGEMAGICK
 
+#include <memory>
+#include <string>
+
 #include "ReaderBase.h"
 #include "MagickUtilities.h"
 
-#include <memory>
-#include <string>
+#include "CacheMemory.h"
 
 namespace openshot
 {

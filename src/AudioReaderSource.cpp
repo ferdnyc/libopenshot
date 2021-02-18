@@ -30,6 +30,7 @@
 
 #include "AudioReaderSource.h"
 #include "ZmqLogger.h"
+#include "Exceptions.h"
 
 using namespace std;
 using namespace openshot;
@@ -97,8 +98,6 @@ void AudioReaderSource::GetMoreSamplesFromReader()
 				frame_number = frame_number + speed;
 
 			} catch (const ReaderClosed & e) {
-			break;
-			} catch (const TooManySeeks & e) {
 			break;
 			} catch (const OutOfBoundsFrame & e) {
 			break;

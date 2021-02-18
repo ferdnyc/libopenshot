@@ -29,11 +29,18 @@
  */
 
 #include "Caption.h"
+#include "Exceptions.h"
 #include "../Clip.h"
 #include "../Timeline.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QRegularExpression>
+
+#include <QString>
+#include <QPoint>
+#include <QRect>
+#include <QPen>
+#include <QBrush>
 
 using namespace openshot;
 
