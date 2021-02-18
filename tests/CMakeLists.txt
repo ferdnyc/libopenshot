@@ -33,7 +33,7 @@ add_definitions( -DTEST_MEDIA_PATH="${TEST_MEDIA_PATH}" )
 find_package(UnitTest++)
 
 if (NOT UnitTest++_FOUND)
-  set(TESTS_ENABLED OFF PARENT_SCOPE)
+  set(CAN_RUN_UNIT_TESTS OFF PARENT_SCOPE)
   return()
 endif()
 
@@ -92,4 +92,3 @@ target_link_libraries(openshot-test openshot ${UnitTest++_LIBRARIES})
 if(NOT ENABLE_COVERAGE)
   add_custom_target(os_test COMMAND openshot-test)
 endif()
-
